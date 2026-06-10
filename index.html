@@ -173,6 +173,93 @@
       background: #15803d;
     }
 
+    .ranking-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px 28px;
+      width: 100%;
+      max-width: 340px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+      text-align: center;
+    }
+
+    .ranking-modal h2 {
+      margin: 0 0 18px;
+      font-size: 1.35rem;
+      color: var(--text);
+    }
+
+    .ranking-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .ranking-table th,
+    .ranking-table td {
+      padding: 0 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      line-height: 17px;
+      height: 17px;
+    }
+
+    .ranking-table thead th {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #fff;
+      background: #1e3a8a;
+      font-weight: 700;
+    }
+
+    .ranking-table .rk-pos {
+      width: 48px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .ranking-table thead .rk-pos,
+    .ranking-table thead .rk-name,
+    .ranking-table thead .rk-pts {
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      text-align: center;
+    }
+
+    .ranking-table .rk-name {
+      text-align: center;
+      font-weight: 600;
+      color: var(--text);
+      width: 100px;
+    }
+
+    .ranking-table .rk-pts {
+      width: 70px;
+      text-align: center;
+      font-weight: 800;
+      color: #1e3a8a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ranking-table tbody tr:last-child th,
+    .ranking-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ranking-actions {
+      margin-top: 20px;
+    }
+
     header h1 {
       margin: 0;
       font-size: 2rem;
@@ -469,6 +556,11 @@
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.12);
       font-weight: 700;
+      cursor: pointer;
+    }
+
+    .name-col-box:hover {
+      background: rgba(255, 255, 255, 0.25);
     }
 
     tbody td {
@@ -675,6 +767,22 @@
     </div>
   </div>
 
+  <div class="admin-overlay" id="rankingOverlay" hidden>
+    <div class="ranking-modal" role="dialog" aria-modal="true" aria-labelledby="rankingTitle">
+      <h2 id="rankingTitle">Placar Geral</h2>
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th class="rk-pos">#</th>
+            <th class="rk-name">Participante</th>
+            <th class="rk-pts">Pontos</th>
+          </tr>
+        </thead>
+        <tbody id="rankingBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <section class="intro">
     <p>
       O site mostra apenas os jogos da primeira fase.<br>
@@ -703,7 +811,7 @@
     <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
   </main>
 
-  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v0.31</footer>
+  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v0.5</footer>
 
   <script src="data.js"></script>
   <script>
@@ -1024,6 +1132,46 @@
 
     adminOverlay.addEventListener("click", e => {
       if (e.target === adminOverlay) closeAdminModal();
+    });
+
+    // ---- Ranking (Placar Geral) ----
+    const rankingOverlay = document.getElementById("rankingOverlay");
+    const rankingBody = document.getElementById("rankingBody");
+
+    function openRanking() {
+      const rows = participants
+        .map((name, i) => ({ name, pts: computeParticipantTotal(i) }))
+        .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, "pt-BR"));
+
+      let lastPts = null;
+      let lastPos = 0;
+      rankingBody.innerHTML = rows.map((r) => {
+        // Mesma pontuação compartilha a mesma posição; a próxima é sequencial
+        const pos = r.pts === lastPts ? lastPos : lastPos + 1;
+        lastPts = r.pts;
+        lastPos = pos;
+        return `
+          <tr>
+            <td class="rk-pos">${pos}</td>
+            <td class="rk-name">${r.name}</td>
+            <td class="rk-pts">${r.pts}</td>
+          </tr>`;
+      }).join("");
+
+      rankingOverlay.hidden = false;
+    }
+
+    function closeRanking() {
+      rankingOverlay.hidden = true;
+    }
+
+    rankingOverlay.addEventListener("click", e => {
+      if (e.target === rankingOverlay) closeRanking();
+    });
+
+    // Clique no cabeçalho "Placar Geral" abre o ranking
+    container.addEventListener("click", e => {
+      if (e.target.closest(".name-col-box")) openRanking();
     });
 
     // Sincroniza a altura do cabeçalho e do rodapé da coluna fixa com a tabela de jogos
