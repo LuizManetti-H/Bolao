@@ -328,6 +328,33 @@
       overflow-y: hidden;
     }
 
+    /* Cabeçalho flutuante: clone fixo no topo quando a tabela rola para fora */
+    .sticky-head {
+      position: fixed;
+      top: 0;
+      z-index: 40;
+      overflow: hidden;
+      background: var(--card);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+      display: none;
+    }
+    .sticky-head.visible { display: block; }
+    .sticky-head .board { display: flex; align-items: flex-start; }
+    .sticky-head .name-table {
+      flex: 0 0 auto;
+      background: #fff;
+      box-shadow: 2px 0 5px rgba(15, 23, 42, 0.12);
+    }
+    .sticky-head .scroll-area {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .sticky-head .scroll-area::-webkit-scrollbar { display: none; }
+
     .match-header {
       display: flex;
       flex-direction: column;
@@ -895,6 +922,7 @@
       container.classList.toggle("admin-mode", on);
       updateResultBoxesEditable();
       setSaveStatus("");
+      if (container.querySelector(".board")) setupStickyHeader();
     }
 
     // ---- Persistência dos placares (GitHub) ----
@@ -1215,6 +1243,128 @@
 
     window.addEventListener("resize", syncBoardHeights);
 
+    // ---- Cabeçalho flutuante (sticky via JS, robusto no iOS) ----
+    let stickyHead = null;
+    let stickyScroll = null;
+
+    function teardownStickyHeader() {
+      if (stickyHead) {
+        stickyHead.remove();
+        stickyHead = null;
+        stickyScroll = null;
+      }
+    }
+
+    function setupStickyHeader() {
+      teardownStickyHeader();
+      const board = container.querySelector(".board");
+      const nameTable = container.querySelector(".name-table");
+      const gamesTable = container.querySelector(".games-table");
+      const realScroll = container.querySelector(".scroll-area");
+      if (!board || !nameTable || !gamesTable || !realScroll) return;
+
+      stickyHead = document.createElement("div");
+      stickyHead.className = "sticky-head";
+
+      const cloneBoard = document.createElement("div");
+      cloneBoard.className = "board";
+
+      const cloneNameTable = document.createElement("table");
+      cloneNameTable.className = "name-table";
+      cloneNameTable.appendChild(nameTable.querySelector("thead").cloneNode(true));
+
+      stickyScroll = document.createElement("div");
+      stickyScroll.className = "scroll-area";
+      const cloneGamesTable = document.createElement("table");
+      cloneGamesTable.className = "games-table";
+      cloneGamesTable.appendChild(gamesTable.querySelector("thead").cloneNode(true));
+      if (adminMode) cloneGamesTable.classList.add("admin-mode");
+      stickyScroll.appendChild(cloneGamesTable);
+
+      cloneBoard.appendChild(cloneNameTable);
+      cloneBoard.appendChild(stickyScroll);
+      stickyHead.appendChild(cloneBoard);
+      document.body.appendChild(stickyHead);
+
+      // Espelha a edição de placar feita no cabeçalho flutuante para os campos reais
+      stickyHead.querySelectorAll(".result-box").forEach(cloneInput => {
+        cloneInput.disabled = !adminMode;
+        const key = cloneInput.dataset.key;
+        const side = cloneInput.dataset.side;
+        cloneInput.addEventListener("input", () => {
+          const real = container.querySelector(`.result-box[data-key="${key}"][data-side="${side}"]`);
+          if (real) {
+            real.value = cloneInput.value;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+      });
+      stickyHead.querySelectorAll(".result-x").forEach(cloneX => {
+        const key = cloneX.dataset.key;
+        cloneX.addEventListener("click", () => {
+          const real = container.querySelector(`.result-x[data-key="${key}"]`);
+          if (real) real.click();
+          syncStickyInputs();
+        });
+      });
+
+      // Mantém a rolagem horizontal do clone sincronizada com a tabela real
+      realScroll.addEventListener("scroll", () => {
+        if (stickyScroll) stickyScroll.scrollLeft = realScroll.scrollLeft;
+      });
+      stickyScroll.addEventListener("scroll", () => {
+        realScroll.scrollLeft = stickyScroll.scrollLeft;
+      });
+
+      updateStickyGeometry();
+      updateStickyHeader();
+    }
+
+    function syncStickyInputs() {
+      if (!stickyHead) return;
+      stickyHead.querySelectorAll(".result-box").forEach(cloneInput => {
+        const key = cloneInput.dataset.key;
+        const side = cloneInput.dataset.side;
+        const real = container.querySelector(`.result-box[data-key="${key}"][data-side="${side}"]`);
+        if (real) cloneInput.value = real.value;
+      });
+    }
+
+    function updateStickyGeometry() {
+      if (!stickyHead) return;
+      const realScroll = container.querySelector(".scroll-area");
+      const rect = container.getBoundingClientRect();
+      stickyHead.style.left = rect.left + "px";
+      stickyHead.style.width = rect.width + "px";
+      if (realScroll && stickyScroll) {
+        stickyScroll.scrollLeft = realScroll.scrollLeft;
+      }
+    }
+
+    function updateStickyHeader() {
+      if (!stickyHead) return;
+      const board = container.querySelector(".board");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const headH = stickyHead.offsetHeight || 0;
+      const shouldShow = rect.top < 0 && rect.bottom > headH + 4;
+      if (shouldShow) {
+        if (!stickyHead.classList.contains("visible")) {
+          stickyHead.classList.add("visible");
+          syncStickyInputs();
+        }
+        updateStickyGeometry();
+      } else {
+        stickyHead.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", updateStickyHeader, { passive: true });
+    window.addEventListener("resize", () => {
+      updateStickyGeometry();
+      updateStickyHeader();
+    });
+
     function render() {
       const selected = dateInput.value;
       dateButton.textContent = formatDate(selected);
@@ -1223,6 +1373,7 @@
       if (dayGames.length === 0) {
         container.innerHTML = "";
         noMatches.hidden = false;
+        teardownStickyHeader();
         return;
       }
       noMatches.hidden = true;
@@ -1349,6 +1500,7 @@
 
       updateResultBoxesEditable();
       dayGames.forEach((_, gIndex) => recomputeGame(gIndex));
+      requestAnimationFrame(setupStickyHeader);
     }
 
     // Converte "2 x 1" em [2, 1]; retorna null se inválido
