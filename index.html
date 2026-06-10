@@ -726,13 +726,18 @@
     function schedulePush() {
       saveCache();
       if (pushTimer) clearTimeout(pushTimer);
-      pushTimer = setTimeout(pushResults, 800);
+      pushTimer = setTimeout(() => { pushResults(); }, 800);
     }
 
+    let knownSha = null;
+    let pushing = false;
+    let pushQueued = false;
+
     async function getResultsSha() {
-      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}`;
-      const res = await fetch(apiUrl, { headers: ghHeaders() });
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}&t=${Date.now()}`;
+      const res = await fetch(apiUrl, { headers: ghHeaders(), cache: "no-store" });
       if (res.ok) { return (await res.json()).sha; }
+      if (res.status === 404) { return null; }
       return null;
     }
 
@@ -741,49 +746,81 @@
         setSaveStatus("error");
         return;
       }
+      // Evita salvamentos simultâneos: enfileira e roda em sequência
+      if (pushing) { pushQueued = true; return; }
+      pushing = true;
       setSaveStatus("saving");
       try {
-        const sha = await getResultsSha();
-        const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
-        const body = {
-          message: "Atualiza placares",
-          content: toBase64Utf8(JSON.stringify(resultsData, null, 2)),
-          branch: GH.branch
-        };
-        if (sha) body.sha = sha;
-        const res = await fetch(apiUrl, {
-          method: "PUT",
-          headers: { ...ghHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-        if (res.ok) { setSaveStatus("saved"); return; }
-
-        let detail = "";
-        try { detail = (await res.json()).message || ""; } catch {}
-        console.error("Falha ao salvar no GitHub:", res.status, detail);
-
-        if (res.status === 401 || res.status === 403) {
-          clearToken();
-          setSaveStatus("error");
-          window.alert(
-            `GitHub recusou o token (HTTP ${res.status}).\n` +
-            `Mensagem: ${detail}\n\n` +
-            `Verifique se o token é fine-grained, com permissão "Contents: Read and write" ` +
-            `no repositório ${GH.owner}/${GH.repo}. Informe o token novamente ao salvar.`
-          );
-          return;
-        }
-        setSaveStatus("error");
-        window.alert(
-          `Erro ao salvar (HTTP ${res.status}).\n` +
-          `Mensagem: ${detail}\n\n` +
-          `Confira se o repositório "${GH.repo}", o dono "${GH.owner}" e a branch "${GH.branch}" estão corretos.`
-        );
+        const ok = await doPush(true);
+        if (ok) setSaveStatus("saved");
       } catch (e) {
         console.error(e);
         setSaveStatus("error");
         window.alert("Erro de rede ao salvar: " + e.message);
+      } finally {
+        pushing = false;
+        if (pushQueued) {
+          pushQueued = false;
+          pushResults();
+        }
       }
+    }
+
+    // Faz o PUT; em caso de conflito de sha (409) relê o sha e tenta de novo
+    async function doPush(allowRetry) {
+      if (knownSha === null) {
+        knownSha = await getResultsSha();
+      }
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+      const body = {
+        message: "Atualiza placares",
+        content: toBase64Utf8(JSON.stringify(resultsData, null, 2)),
+        branch: GH.branch
+      };
+      if (knownSha) body.sha = knownSha;
+
+      const res = await fetch(apiUrl, {
+        method: "PUT",
+        headers: { ...ghHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        knownSha = data && data.content ? data.content.sha : null;
+        return true;
+      }
+
+      // Conflito de versão: relê o sha atual e tenta uma vez mais
+      if ((res.status === 409 || res.status === 422) && allowRetry) {
+        knownSha = await getResultsSha();
+        return doPush(false);
+      }
+
+      let detail = "";
+      try { detail = (await res.json()).message || ""; } catch {}
+      console.error("Falha ao salvar no GitHub:", res.status, detail);
+
+      if (res.status === 401 || res.status === 403) {
+        clearToken();
+        knownSha = null;
+        setSaveStatus("error");
+        window.alert(
+          `GitHub recusou o token (HTTP ${res.status}).\n` +
+          `Mensagem: ${detail}\n\n` +
+          `Verifique se o token é fine-grained, com permissão "Contents: Read and write" ` +
+          `no repositório ${GH.owner}/${GH.repo}. Informe o token novamente ao salvar.`
+        );
+        return false;
+      }
+
+      setSaveStatus("error");
+      window.alert(
+        `Erro ao salvar (HTTP ${res.status}).\n` +
+        `Mensagem: ${detail}\n\n` +
+        `Confira se o repositório "${GH.repo}", o dono "${GH.owner}" e a branch "${GH.branch}" estão corretos.`
+      );
+      return false;
     }
 
     function setSaveStatus(state) {
