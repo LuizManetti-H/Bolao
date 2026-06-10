@@ -431,7 +431,7 @@
       text-transform: uppercase;
       letter-spacing: 0.6px;
       vertical-align: bottom;
-      width: 110px;
+      width: 180px;
     }
 
     tbody td {
@@ -451,7 +451,18 @@
       text-align: left;
       white-space: nowrap;
       background: #f8fafc;
-      width: 110px;
+      width: 180px;
+    }
+
+    .name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .name-label {
+      flex: 1;
     }
 
     .score {
@@ -480,6 +491,19 @@
     .pts-one { background: #fef9c3; color: #a16207; }
     .pts-neg { background: #fee2e2; color: #b91c1c; }
     .pts-zero { background: #f1f5f9; color: #64748b; }
+
+    .total-box {
+      flex: 0 0 auto;
+      min-width: 52px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: #1e3a8a;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
 
     tfoot td {
       border-top: 2px solid var(--border);
@@ -969,7 +993,10 @@
         ).join("");
         return `
           <tr>
-            <td class="name">${name}</td>
+            <td class="name">
+              <span class="name-label">${name}</span>
+              <span class="total-box" data-participant="${pIndex}">0</span>
+            </td>
             ${cells}
           </tr>`;
       }).join("");
@@ -1085,6 +1112,29 @@
           : points < 0 ? "pts-neg"
           : "pts-zero";
         span.className = "pts " + cls;
+      });
+
+      updateTotals();
+    }
+
+    // Soma o score de TODOS os jogos para cada participante e atualiza os boxes azuis
+    function computeParticipantTotal(pIndex) {
+      let total = 0;
+      games.forEach(g => {
+        const r = resultsData[gameKey(g)];
+        if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
+        const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
+        if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
+        const pred = parseScore(g.p[pIndex]);
+        if (pred) total += computePoints(pred, result);
+      });
+      return total;
+    }
+
+    function updateTotals() {
+      container.querySelectorAll(".total-box").forEach(box => {
+        const pIndex = parseInt(box.dataset.participant, 10);
+        box.textContent = computeParticipantTotal(pIndex);
       });
     }
 
