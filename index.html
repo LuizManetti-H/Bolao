@@ -448,8 +448,18 @@
       box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
     }
 
+    .name-col-box {
+      display: inline-block;
+      padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      font-weight: 700;
+    }
+
     tbody td {
-      padding: 11px 10px;
+      padding: 0 10px;
+      height: 45px;
       border-bottom: 1px solid var(--border);
       border-right: 1px solid var(--border);
       font-size: 0.95rem;
@@ -457,14 +467,17 @@
 
     tbody td:last-child { border-right: none; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr:nth-child(even) { background: #fbfdff; }
-    tbody tr:hover { background: var(--accent-soft); }
+    tbody tr:nth-child(odd) td { background: #ffffff; }
+    tbody tr:nth-child(even) td { background: #f1f3f5; }
+    tbody tr:nth-child(odd) .name { background: #ffffff; }
+    tbody tr:nth-child(even) .name { background: #f1f3f5; }
+    tbody tr:hover td,
+    tbody tr:hover .name { background: var(--accent-soft); }
 
     .name {
       font-weight: 600;
       text-align: left;
       white-space: nowrap;
-      background: #f8fafc;
       width: 145px;
       position: sticky;
       left: 0;
@@ -490,34 +503,44 @@
       font-weight: 700;
       color: var(--accent);
       text-align: center;
+      position: relative;
     }
 
     .score .pred {
       display: inline-block;
-      font-size: 0.95rem;
+      font-size: 1.1rem;
+    }
+
+    .score .pred .pred-x {
+      font-size: 0.80rem;
     }
 
     .pts {
       display: inline-block;
       min-width: 24px;
-      margin-left: 6px;
       padding: 1px 5px;
       border-radius: 6px;
       font-size: 0.78rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     .pts-pos { background: #dcfce7; color: #15803d; }
     .pts-one { background: #fef9c3; color: #a16207; }
     .pts-neg { background: #fee2e2; color: #b91c1c; }
     .pts-zero { background: #f1f5f9; color: #64748b; }
+    .pts-hidden { background: transparent; }
 
     .total-box {
       flex: 0 0 auto;
       min-width: 52px;
       padding: 4px 8px;
       border-radius: 8px;
+      border: 1px solid #000;
       background: #1e3a8a;
       color: #fff;
       font-weight: 800;
@@ -1022,7 +1045,7 @@
       const bodyRows = participants.map((name, pIndex) => {
         const cells = dayGames.map((g, gIndex) =>
           `<td class="score">
-            <span class="pred">${g.p[pIndex]}</span>
+            <span class="pred">${g.p[pIndex].replace(/x/i, '<span class="pred-x">x</span>')}</span>
             <span class="pts" data-game="${gIndex}" data-pred="${g.p[pIndex]}"></span>
           </td>`
         ).join("");
@@ -1056,7 +1079,7 @@
         <table>
           <thead>
             <tr>
-              <th class="name-col"></th>
+              <th class="name-col"><span class="name-col-box">Placar Geral</span></th>
               ${headerCells}
             </tr>
           </thead>
@@ -1136,16 +1159,20 @@
       container.querySelectorAll(`.pts[data-game="${gIndex}"]`).forEach(span => {
         if (!result) {
           span.innerHTML = "&nbsp;";
-          span.className = "pts pts-zero";
+          span.className = "pts pts-hidden";
           return;
         }
         const pred = parseScore(span.dataset.pred);
         const points = pred ? computePoints(pred, result) : 0;
-        span.textContent = points > 0 ? `+${points}` : points < 0 ? `${points}` : "-";
+        if (points === 0) {
+          span.innerHTML = "&nbsp;";
+          span.className = "pts pts-hidden";
+          return;
+        }
+        span.textContent = points > 0 ? `+${points}` : `${points}`;
         const cls = points === 3 ? "pts-pos"
           : points === 1 ? "pts-one"
-          : points < 0 ? "pts-neg"
-          : "pts-zero";
+          : "pts-neg";
         span.className = "pts " + cls;
       });
 
