@@ -37,32 +37,37 @@
 
     .scale-control {
       position: absolute;
-      top: 16px;
+      top: 23px;
       left: 20px;
       z-index: 5;
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      gap: 3px;
+      width: 75px;
+      height: 25px;
+      box-sizing: border-box;
       background: rgba(15, 23, 42, 0.85);
-      border-radius: 10px;
-      padding: 4px;
+      border-radius: 8px;
+      padding: 3px;
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
     }
 
     .scale-control button {
-      width: 30px;
-      height: 30px;
-      font-size: 1.2rem;
+      width: 18px;
+      height: 19px;
+      font-size: 0.9rem;
       font-weight: 700;
       line-height: 1;
       color: #fff;
       background: rgba(255, 255, 255, 0.15);
       border: none;
-      border-radius: 7px;
+      border-radius: 5px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex: 0 0 auto;
     }
 
     .scale-control button:hover {
@@ -70,10 +75,10 @@
     }
 
     .scale-control .scale-value {
-      min-width: 42px;
+      min-width: 27px;
       text-align: center;
       color: #fff;
-      font-size: 0.8rem;
+      font-size: 0.6rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
@@ -900,7 +905,7 @@
     <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
   </main>
 
-  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v0.91</footer>
+  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v1.0</footer>
   </div>
 
   <script src="data.js"></script>
