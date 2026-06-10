@@ -297,7 +297,7 @@
     main {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 32px 24px 16px;
+      padding: 24px 24px 16px;
     }
 
     .matches-grid {
@@ -820,13 +820,12 @@
 
   <section class="intro">
     <p>
-      Clique em "Data dos jogos" para alterar a data.<br>
+      Altere a data para visualizar os jogos de outros dias.<br>
       Clique em "Placar Geral" para ver o ranking.
     </p>
   </section>
 
   <div class="match-date">
-    <label for="matchDate">Data dos jogos:</label>
     <div class="date-picker">
       <button type="button" class="date-button" id="dateButton"></button>
       <input
@@ -1605,6 +1604,16 @@
     dateInput.addEventListener("change", () => {
       fetchResults().then(render);
     });
+
+    // Ao abrir, seleciona a data de hoje (limitada ao período do torneio)
+    (function setInitialDate() {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      let target = today;
+      if (dateInput.min && target < dateInput.min) target = dateInput.min;
+      if (dateInput.max && target > dateInput.max) target = dateInput.max;
+      dateInput.value = target;
+    })();
 
     resultsData = loadCache();
     render();
