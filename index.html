@@ -527,6 +527,7 @@
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
       cursor: pointer;
       white-space: nowrap;
+      pointer-events: none;
     }
 
     .date-button:hover {
@@ -548,7 +549,10 @@
       border: none;
       padding: 0;
       margin: 0;
-      pointer-events: none;
+      cursor: pointer;
+      z-index: 2;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
     table {
@@ -886,11 +890,12 @@
       g._lt = toLocalTimeStr(gameLocalDateTime(g));
     });
 
-    dateButton.addEventListener("click", () => {
+    // Abre o seletor de datas ao clicar na própria data.
+    // No desktop, showPicker() abre o calendário; no iOS/Safari o toque direto
+    // sobre o input nativo (que fica transparente por cima do box) já o abre.
+    dateInput.addEventListener("click", () => {
       if (typeof dateInput.showPicker === "function") {
-        dateInput.showPicker();
-      } else {
-        dateInput.focus();
+        try { dateInput.showPicker(); } catch (e) { /* iOS abre nativamente */ }
       }
     });
 
