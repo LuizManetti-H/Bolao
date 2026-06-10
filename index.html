@@ -934,6 +934,20 @@
         stickyHead.style.transformOrigin = "top left";
         stickyHead.style.transform = "scale(" + pageScale + ")";
       }
+      // O botão +/- segue uma escala própria (mais suave) em relação à página.
+      const scaleControl = document.getElementById("scaleControl");
+      if (scaleControl) {
+        const pct = Math.round(pageScale * 100);
+        let target;
+        if (pct >= 100) target = 1.00;
+        else if (pct >= 90) target = 0.90;
+        else if (pct >= 80) target = 0.85;
+        else if (pct >= 70) target = 0.80;
+        else if (pct >= 60) target = 0.75;
+        else target = 0.70;
+        scaleControl.style.transformOrigin = "top left";
+        scaleControl.style.transform = "scale(" + (target / pageScale) + ")";
+      }
       scaleValue.textContent = Math.round(pageScale * 100) + "%";
       localStorage.setItem("bolaoScale", String(pageScale));
       // Compensa a altura: transform não reflui o layout, então a altura
