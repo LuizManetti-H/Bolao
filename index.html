@@ -37,15 +37,15 @@
 
     .scale-control {
       position: absolute;
-      top: 23px;
-      left: 20px;
+      top: 22px;
+      left: 10px;
       z-index: 5;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      width: 75px;
-      height: 25px;
+      gap: 4px;
+      width: 86px;
+      height: 28px;
       box-sizing: border-box;
       background: rgba(15, 23, 42, 0.85);
       border-radius: 8px;
@@ -54,15 +54,15 @@
     }
 
     .scale-control button {
-      width: 18px;
-      height: 19px;
-      font-size: 0.9rem;
+      width: 22px;
+      height: 22px;
+      font-size: 1rem;
       font-weight: 700;
       line-height: 1;
       color: #fff;
       background: rgba(255, 255, 255, 0.15);
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -75,10 +75,10 @@
     }
 
     .scale-control .scale-value {
-      min-width: 27px;
+      min-width: 29px;
       text-align: center;
       color: #fff;
-      font-size: 0.6rem;
+      font-size: 0.65rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
@@ -98,7 +98,7 @@
     .admin-button {
       position: absolute;
       top: 16px;
-      right: 20px;
+      right: 10px;
       font: inherit;
       font-weight: 700;
       font-size: 0.9rem;
@@ -843,42 +843,6 @@
     <p class="subtitle">Copa do Mundo FIFA 2026 - Primeira Fase</p>
   </header>
 
-  <div class="admin-overlay" id="adminOverlay" hidden>
-    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
-      <h2 id="adminModalTitle">Acesso administrativo</h2>
-      <p>Digite a senha de 6 dígitos</p>
-      <div class="pin-inputs" id="pinInputs">
-        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
-        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
-        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
-        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
-        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
-        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
-      </div>
-      <p class="pin-error" id="pinError" hidden>Senha incorreta. Tente novamente.</p>
-      <div class="admin-modal-actions">
-        <button type="button" class="modal-btn modal-btn-cancel" id="adminCancel">Cancelar</button>
-        <button type="button" class="modal-btn modal-btn-confirm" id="adminConfirm">Entrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="admin-overlay" id="rankingOverlay" hidden>
-    <div class="ranking-modal" role="dialog" aria-modal="true" aria-labelledby="rankingTitle">
-      <h2 id="rankingTitle">Placar Geral</h2>
-      <table class="ranking-table">
-        <thead>
-          <tr>
-            <th class="rk-pos">#</th>
-            <th class="rk-name">Participante</th>
-            <th class="rk-pts">Pontos</th>
-          </tr>
-        </thead>
-        <tbody id="rankingBody"></tbody>
-      </table>
-    </div>
-  </div>
-
   <section class="intro">
     <p>
       Altere a data para visualizar os jogos de outros dias.<br>
@@ -906,6 +870,42 @@
   </main>
 
   <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v1.0</footer>
+  </div>
+
+  <div class="admin-overlay" id="adminOverlay" hidden>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
+      <h2 id="adminModalTitle">Acesso administrativo</h2>
+      <p>Digite a senha de 6 dígitos</p>
+      <div class="pin-inputs" id="pinInputs">
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+      </div>
+      <p class="pin-error" id="pinError" hidden>Senha incorreta. Tente novamente.</p>
+      <div class="admin-modal-actions">
+        <button type="button" class="modal-btn modal-btn-cancel" id="adminCancel">Cancelar</button>
+        <button type="button" class="modal-btn modal-btn-confirm" id="adminConfirm">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="rankingOverlay" hidden>
+    <div class="ranking-modal" id="rankingModal" role="dialog" aria-modal="true" aria-labelledby="rankingTitle">
+      <h2 id="rankingTitle">Placar Geral</h2>
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th class="rk-pos">#</th>
+            <th class="rk-name">Participante</th>
+            <th class="rk-pts">Pontos</th>
+          </tr>
+        </thead>
+        <tbody id="rankingBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <script src="data.js"></script>
@@ -1290,6 +1290,7 @@
     // ---- Ranking (Placar Geral) ----
     const rankingOverlay = document.getElementById("rankingOverlay");
     const rankingBody = document.getElementById("rankingBody");
+    const rankingModal = document.getElementById("rankingModal");
 
     function openRanking() {
       const rows = participants
@@ -1311,7 +1312,18 @@
           </tr>`;
       }).join("");
 
+      rankingModal.style.transform = "none";
       rankingOverlay.hidden = false;
+
+      // O ranking acompanha a escala da página (botão +/−). A 100% ocupa o
+      // máximo da altura visível; em escalas menores, reduz proporcionalmente.
+      requestAnimationFrame(() => {
+        const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+        // Permite que a altura visível chegue a ~96% da tela após a escala
+        rankingModal.style.maxHeight = (window.innerHeight * 0.96 / s) + "px";
+        rankingModal.style.transformOrigin = "center center";
+        rankingModal.style.transform = "scale(" + s + ")";
+      });
     }
 
     function closeRanking() {
