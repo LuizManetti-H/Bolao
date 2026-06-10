@@ -36,10 +36,10 @@
     }
 
     .scale-control {
-      position: fixed;
+      position: absolute;
       top: 16px;
-      left: 12px;
-      z-index: 120;
+      left: 20px;
+      z-index: 5;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -826,13 +826,13 @@
   </style>
 </head>
 <body>
-  <div class="scale-control" id="scaleControl">
-    <button type="button" id="scaleMinus" aria-label="Diminuir escala">−</button>
-    <span class="scale-value" id="scaleValue">100%</span>
-    <button type="button" id="scalePlus" aria-label="Aumentar escala">+</button>
-  </div>
   <div id="zoomWrap">
   <header>
+    <div class="scale-control" id="scaleControl">
+      <button type="button" id="scaleMinus" aria-label="Diminuir escala">−</button>
+      <span class="scale-value" id="scaleValue">100%</span>
+      <button type="button" id="scalePlus" aria-label="Aumentar escala">+</button>
+    </div>
     <button type="button" class="admin-button" id="adminButton">Admin</button>
     <h1>Bolão</h1>
     <p class="subtitle">Copa do Mundo FIFA 2026 - Primeira Fase</p>
@@ -900,7 +900,7 @@
     <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
   </main>
 
-  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v0.9</footer>
+  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v0.91</footer>
   </div>
 
   <script src="data.js"></script>
@@ -1333,8 +1333,11 @@
       const gFootRow = gamesTable.querySelector("tfoot tr");
       nHead.style.height = "auto";
       nFoot.style.height = "auto";
-      const headH = gHeadRow.getBoundingClientRect().height;
-      const footH = gFootRow.getBoundingClientRect().height;
+      // getBoundingClientRect retorna alturas já escaladas pelo transform;
+      // divide pela escala para obter a altura natural antes de reaplicar.
+      const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+      const headH = gHeadRow.getBoundingClientRect().height / s;
+      const footH = gFootRow.getBoundingClientRect().height / s;
       nHead.style.height = headH + "px";
       nFoot.style.height = footH + "px";
     }
