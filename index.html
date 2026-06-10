@@ -199,7 +199,7 @@
     .intro p {
       margin: 0;
       color: var(--muted);
-      font-size: 1rem;
+      font-size: 0.8rem;
       text-align: center;
     }
 
@@ -214,7 +214,9 @@
       border-radius: 14px;
       box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
       border: 1px solid var(--border);
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
     }
 
     .match-header {
@@ -439,6 +441,10 @@
       letter-spacing: 0.6px;
       vertical-align: bottom;
       width: 145px;
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
     }
 
     tbody td {
@@ -459,6 +465,10 @@
       white-space: nowrap;
       background: #f8fafc;
       width: 145px;
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
     }
 
     .name {
@@ -536,6 +546,11 @@
       letter-spacing: 0.6px;
       font-weight: 700;
       color: var(--muted);
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #f8fafc;
+      box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
       text-align: left;
       white-space: nowrap;
     }
