@@ -304,6 +304,16 @@
       font-size: 0.85rem;
     }
 
+    .admin-mode .result-x {
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .admin-mode .result-x:hover {
+      background: #fff;
+      color: var(--accent);
+    }
+
     .match-date {
       max-width: 1100px;
       margin: 24px auto 0;
@@ -655,6 +665,7 @@
     function setAdminMode(on) {
       adminMode = on;
       adminButton.classList.toggle("active", on);
+      container.classList.toggle("admin-mode", on);
       updateResultBoxesEditable();
       setSaveStatus("");
     }
@@ -908,7 +919,7 @@
             </span>
             <span class="match-result">
               <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
-              <span class="result-x">x</span>
+              <span class="result-x" data-game="${gIndex}" data-key="${gameKey(g)}" title="Zerar placar (admin)">x</span>
               <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" data-key="${gameKey(g)}" aria-label="Gols ${g.a}" />
             </span>
           </div>
@@ -978,6 +989,20 @@
           schedulePush();
         });
       });
+
+      // Clicar no "x" central zera o placar do jogo (somente admin)
+      container.querySelectorAll(".result-x").forEach(x => {
+        x.addEventListener("click", () => {
+          if (!adminMode) return;
+          const k = x.dataset.key;
+          const gIndex = x.dataset.game;
+          resultsData[k] = { h: "", a: "" };
+          container.querySelectorAll(`.result-box[data-game="${gIndex}"]`).forEach(inp => { inp.value = ""; });
+          recomputeGame(gIndex);
+          schedulePush();
+        });
+      });
+
       updateResultBoxesEditable();
       dayGames.forEach((_, gIndex) => recomputeGame(gIndex));
     }
