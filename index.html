@@ -756,16 +756,33 @@
           headers: { ...ghHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify(body)
         });
+        if (res.ok) { setSaveStatus("saved"); return; }
+
+        let detail = "";
+        try { detail = (await res.json()).message || ""; } catch {}
+        console.error("Falha ao salvar no GitHub:", res.status, detail);
+
         if (res.status === 401 || res.status === 403) {
           clearToken();
           setSaveStatus("error");
-          window.alert("Token inválido ou sem permissão. Informe-o novamente ao salvar.");
+          window.alert(
+            `GitHub recusou o token (HTTP ${res.status}).\n` +
+            `Mensagem: ${detail}\n\n` +
+            `Verifique se o token é fine-grained, com permissão "Contents: Read and write" ` +
+            `no repositório ${GH.owner}/${GH.repo}. Informe o token novamente ao salvar.`
+          );
           return;
         }
-        if (!res.ok) { setSaveStatus("error"); return; }
-        setSaveStatus("saved");
-      } catch (e) {
         setSaveStatus("error");
+        window.alert(
+          `Erro ao salvar (HTTP ${res.status}).\n` +
+          `Mensagem: ${detail}\n\n` +
+          `Confira se o repositório "${GH.repo}", o dono "${GH.owner}" e a branch "${GH.branch}" estão corretos.`
+        );
+      } catch (e) {
+        console.error(e);
+        setSaveStatus("error");
+        window.alert("Erro de rede ao salvar: " + e.message);
       }
     }
 
