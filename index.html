@@ -28,6 +28,49 @@
       line-height: 1.5;
     }
 
+    .scale-control {
+      position: fixed;
+      top: 16px;
+      left: 12px;
+      z-index: 120;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15, 23, 42, 0.85);
+      border-radius: 10px;
+      padding: 4px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    }
+
+    .scale-control button {
+      width: 30px;
+      height: 30px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scale-control button:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .scale-control .scale-value {
+      min-width: 42px;
+      text-align: center;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
     header {
       position: relative;
       background: linear-gradient(120deg, var(--header-grad-1), var(--header-grad-2));
@@ -776,6 +819,12 @@
   </style>
 </head>
 <body>
+  <div class="scale-control" id="scaleControl">
+    <button type="button" id="scaleMinus" aria-label="Diminuir escala">−</button>
+    <span class="scale-value" id="scaleValue">100%</span>
+    <button type="button" id="scalePlus" aria-label="Aumentar escala">+</button>
+  </div>
+  <div id="zoomWrap">
   <header>
     <button type="button" class="admin-button" id="adminButton">Admin</button>
     <h1>Bolão</h1>
@@ -845,6 +894,7 @@
   </main>
 
   <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v1.0</footer>
+  </div>
 
   <script src="data.js"></script>
   <script>
@@ -854,6 +904,33 @@
     const container = document.getElementById("matches");
     const noMatches = document.getElementById("noMatches");
     const dateButton = document.getElementById("dateButton");
+
+    // ---- Controle de escala (zoom) da página ----
+    const zoomWrap = document.getElementById("zoomWrap");
+    const scaleValue = document.getElementById("scaleValue");
+    const SCALE_MIN = 0.5;
+    const SCALE_MAX = 1.5;
+    const SCALE_STEP = 0.1;
+    let pageScale = parseFloat(localStorage.getItem("bolaoScale")) || 1;
+
+    function applyScale() {
+      pageScale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(pageScale * 100) / 100));
+      zoomWrap.style.zoom = pageScale;
+      if (stickyHead) stickyHead.style.zoom = pageScale;
+      scaleValue.textContent = Math.round(pageScale * 100) + "%";
+      localStorage.setItem("bolaoScale", String(pageScale));
+      if (typeof updateStickyGeometry === "function") updateStickyGeometry();
+      if (typeof updateStickyHeader === "function") updateStickyHeader();
+    }
+
+    document.getElementById("scaleMinus").addEventListener("click", () => {
+      pageScale -= SCALE_STEP;
+      applyScale();
+    });
+    document.getElementById("scalePlus").addEventListener("click", () => {
+      pageScale += SCALE_STEP;
+      applyScale();
+    });
 
     const weekdays = [
       "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
@@ -1269,6 +1346,7 @@
 
       stickyHead = document.createElement("div");
       stickyHead.className = "sticky-head";
+      stickyHead.style.zoom = pageScale;
 
       const cloneBoard = document.createElement("div");
       cloneBoard.className = "board";
@@ -1338,8 +1416,10 @@
       if (!stickyHead) return;
       const realScroll = container.querySelector(".scroll-area");
       const rect = container.getBoundingClientRect();
-      stickyHead.style.left = rect.left + "px";
-      stickyHead.style.width = rect.width + "px";
+      // stickyHead tem zoom próprio (pageScale); divide para não escalar 2x
+      const s = pageScale || 1;
+      stickyHead.style.left = (rect.left / s) + "px";
+      stickyHead.style.width = (rect.width / s) + "px";
       if (realScroll && stickyScroll) {
         stickyScroll.scrollLeft = realScroll.scrollLeft;
       }
@@ -1617,6 +1697,7 @@
 
     resultsData = loadCache();
     render();
+    applyScale();
     fetchResults().then(render);
   </script>
 </body>
