@@ -249,7 +249,13 @@
       justify-content: center;
       text-align: center;
       line-height: 1.2;
-      height: 2.4em;
+      height: 1.2rem;
+      white-space: nowrap;
+    }
+
+    .match-teams .team.team-sm {
+      font-size: 0.82rem;
+      white-space: nowrap;
     }
 
     .match-teams .team-x {
@@ -431,7 +437,7 @@
       text-transform: uppercase;
       letter-spacing: 0.6px;
       vertical-align: bottom;
-      width: 180px;
+      width: 145px;
     }
 
     tbody td {
@@ -451,18 +457,19 @@
       text-align: left;
       white-space: nowrap;
       background: #f8fafc;
-      width: 180px;
+      width: 145px;
     }
 
     .name {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 10px;
     }
 
     .name-label {
-      flex: 1;
+      flex: 0 0 auto;
+      width: 63px;
     }
 
     .score {
@@ -474,6 +481,7 @@
 
     .score .pred {
       display: inline-block;
+      font-size: 0.95rem;
     }
 
     .pts {
@@ -500,7 +508,7 @@
       background: #1e3a8a;
       color: #fff;
       font-weight: 800;
-      font-size: 0.95rem;
+      font-size: 0.78rem;
       font-variant-numeric: tabular-nums;
       text-align: center;
     }
@@ -605,8 +613,8 @@
 
   <section class="intro">
     <p>
-      O Bolão mostra apenas os jogos da primeira fase da Copa do Mundo FIFA 2026.<br>
-      Navegue por cada jogo abaixo para ver os palpites de cada participante.
+      O site mostra apenas os jogos da primeira fase da Copa do Mundo FIFA 2026.<br>
+      Clique em "Data dos jogos" para alterar a data.
     </p>
   </section>
 
@@ -965,15 +973,19 @@
       }
       noMatches.hidden = true;
 
+      // Nomes longos que recebem fonte reduzida para caber em uma linha
+      const longNames = new Set(["Costa do Marfim", "Arábia Saudita", "Nova Zelândia", "Estados Unidos"]);
+      const teamClass = name => "team" + (longNames.has(name) ? " team-sm" : "");
+
       // Cabeçalho: coluna de nomes + uma coluna por jogo
       const headerCells = dayGames.map((g, gIndex) => `
         <th>
           <div class="match-header">
             <span class="match-time">${g.t}</span>
             <span class="match-teams">
-              <span class="team">${g.h}</span>
+              <span class="${teamClass(g.h)}">${g.h}</span>
               <span class="team-x">x</span>
-              <span class="team">${g.a}</span>
+              <span class="${teamClass(g.a)}">${g.a}</span>
             </span>
             <span class="match-result">
               <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
