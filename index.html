@@ -634,6 +634,18 @@
       font-size: 1rem;
       padding: 32px;
     }
+
+    @media (max-width: 640px) {
+      main {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .match-date {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -665,9 +677,9 @@
 
   <section class="intro">
     <p>
-      O site mostra apenas os jogos da primeira fase da Copa do Mundo FIFA 2026.<br>
+      O site mostra apenas os jogos da primeira fase.<br>
       Clique em "Data dos jogos" para alterar a data.<br>
-      1.1
+      Clique em "Placar Geral" para ver o ranking.
     </p>
   </section>
 
@@ -691,7 +703,7 @@
     <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
   </main>
 
-  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase</footer>
+  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v1.2</footer>
 
   <script src="data.js"></script>
   <script>
