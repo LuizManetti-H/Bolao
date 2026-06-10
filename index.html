@@ -29,6 +29,7 @@
     }
 
     header {
+      position: relative;
       background: linear-gradient(120deg, var(--header-grad-1), var(--header-grad-2));
       color: #fff;
       padding: 18px 24px 34px;
@@ -37,6 +38,139 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+    }
+
+    .admin-button {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .admin-button:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .admin-button.active {
+      background: #f97316;
+      border-color: #ea580c;
+      color: #fff;
+    }
+
+    .admin-button.active:hover {
+      background: #ea580c;
+    }
+
+    .admin-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .admin-overlay[hidden] {
+      display: none;
+    }
+
+    .admin-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+      text-align: center;
+    }
+
+    .admin-modal h2 {
+      margin: 0 0 6px;
+      font-size: 1.25rem;
+      color: var(--text);
+    }
+
+    .admin-modal p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .pin-inputs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .pin-box {
+      width: 44px;
+      height: 54px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .pin-box:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: #fff;
+    }
+
+    .pin-error {
+      color: #b91c1c !important;
+      font-weight: 600;
+      margin: 14px 0 0 !important;
+    }
+
+    .admin-modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 22px;
+    }
+
+    .modal-btn {
+      font: inherit;
+      font-weight: 600;
+      padding: 9px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .modal-btn-cancel {
+      background: #f1f5f9;
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .modal-btn-cancel:hover {
+      background: #e2e8f0;
+    }
+
+    .modal-btn-confirm {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .modal-btn-confirm:hover {
+      background: #15803d;
     }
 
     header h1 {
@@ -157,6 +291,13 @@
       outline: 2px solid var(--accent);
     }
 
+    .result-box:disabled {
+      background: #fff;
+      color: var(--text);
+      opacity: 1;
+      cursor: default;
+    }
+
     .result-x {
       color: #fff;
       font-weight: 700;
@@ -198,6 +339,61 @@
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .match-date-label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .date-picker {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .save-status {
+      margin-left: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .save-status.saving { color: #b45309; }
+    .save-status.saved { color: #15803d; }
+    .save-status.error { color: #b91c1c; }
+
+    .date-button {
+      font: inherit;
+      font-weight: 600;
+      color: var(--text);
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .date-button:hover {
+      border-color: var(--accent);
+    }
+
+    .date-button:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .date-picker input[type="date"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      border: none;
+      padding: 0;
+      margin: 0;
+      pointer-events: none;
     }
 
     table {
@@ -348,9 +544,30 @@
 </head>
 <body>
   <header>
+    <button type="button" class="admin-button" id="adminButton">Admin</button>
     <h1>Bolão</h1>
     <p class="subtitle">Copa do Mundo FIFA 2026 - Primeira Fase</p>
   </header>
+
+  <div class="admin-overlay" id="adminOverlay" hidden>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
+      <h2 id="adminModalTitle">Acesso administrativo</h2>
+      <p>Digite a senha de 6 dígitos</p>
+      <div class="pin-inputs" id="pinInputs">
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+        <input type="password" inputmode="text" maxlength="1" class="pin-box" autocomplete="off" />
+      </div>
+      <p class="pin-error" id="pinError" hidden>Senha incorreta. Tente novamente.</p>
+      <div class="admin-modal-actions">
+        <button type="button" class="modal-btn modal-btn-cancel" id="adminCancel">Cancelar</button>
+        <button type="button" class="modal-btn modal-btn-confirm" id="adminConfirm">Entrar</button>
+      </div>
+    </div>
+  </div>
 
   <section class="intro">
     <p>
@@ -361,13 +578,17 @@
 
   <div class="match-date">
     <label for="matchDate">Data dos jogos:</label>
-    <input
-      type="date"
-      id="matchDate"
-      value="2026-06-11"
-      min="2026-06-11"
-      max="2026-06-27"
-    />
+    <div class="date-picker">
+      <button type="button" class="date-button" id="dateButton"></button>
+      <input
+        type="date"
+        id="matchDate"
+        value="2026-06-11"
+        min="2026-06-11"
+        max="2026-06-27"
+      />
+    </div>
+    <span class="save-status" id="saveStatus"></span>
   </div>
 
   <main>
@@ -384,9 +605,234 @@
     const dateInput = document.getElementById("matchDate");
     const container = document.getElementById("matches");
     const noMatches = document.getElementById("noMatches");
+    const dateButton = document.getElementById("dateButton");
+
+    const weekdays = [
+      "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
+      "Quinta-feira", "Sexta-feira", "Sábado"
+    ];
+    const months = [
+      "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+      "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    ];
+
+    function formatDate(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      const date = new Date(y, m - 1, d);
+      return `${weekdays[date.getDay()]}, ${d} de ${months[m - 1]} de ${y}`;
+    }
+
+    dateButton.addEventListener("click", () => {
+      if (typeof dateInput.showPicker === "function") {
+        dateInput.showPicker();
+      } else {
+        dateInput.focus();
+      }
+    });
+
+    // ---- Modo administrativo ----
+    const ADMIN_PASSWORD = "VF0020";
+    let adminMode = false;
+
+    const adminButton = document.getElementById("adminButton");
+    const adminOverlay = document.getElementById("adminOverlay");
+    const pinInputs = Array.from(document.querySelectorAll(".pin-box"));
+    const pinError = document.getElementById("pinError");
+    const adminCancel = document.getElementById("adminCancel");
+    const adminConfirm = document.getElementById("adminConfirm");
+
+    function openAdminModal() {
+      pinError.hidden = true;
+      pinInputs.forEach(i => (i.value = ""));
+      adminOverlay.hidden = false;
+      pinInputs[0].focus();
+    }
+
+    function closeAdminModal() {
+      adminOverlay.hidden = true;
+    }
+
+    function setAdminMode(on) {
+      adminMode = on;
+      adminButton.classList.toggle("active", on);
+      updateResultBoxesEditable();
+      setSaveStatus("");
+    }
+
+    // ---- Persistência dos placares (GitHub) ----
+    const GH = {
+      owner: "LuizManetti-H",
+      repo: "Bolao",
+      branch: "main",
+      path: "results.json"
+    };
+    const TOKEN_KEY = "bolaoGhToken";
+    const CACHE_KEY = "bolaoResultsCache";
+
+    let resultsData = {};
+    const saveStatus = document.getElementById("saveStatus");
+
+    function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+    function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+    function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+    function loadCache() {
+      try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || {}; }
+      catch { return {}; }
+    }
+    function saveCache() {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(resultsData));
+    }
+
+    function gameKey(g) {
+      return `${g.d}|${g.h}|${g.a}`;
+    }
+
+    // Lê os placares publicados no repositório (todos os visitantes)
+    async function fetchResults() {
+      try {
+        const url = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${GH.path}?t=${Date.now()}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) {
+          resultsData = await res.json();
+          saveCache();
+        }
+      } catch (e) {
+        // Sem rede ou ainda não publicado: mantém o cache local
+      }
+    }
+
+    function toBase64Utf8(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function ghHeaders() {
+      return {
+        Authorization: `Bearer ${getToken()}`,
+        Accept: "application/vnd.github+json"
+      };
+    }
+
+    function ensureToken() {
+      if (getToken()) return true;
+      const t = window.prompt(
+        "Cole seu token de acesso do GitHub (necessário para salvar os placares):"
+      );
+      if (t && t.trim()) { setToken(t.trim()); return true; }
+      return false;
+    }
+
+    let pushTimer = null;
+    function schedulePush() {
+      saveCache();
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(pushResults, 800);
+    }
+
+    async function getResultsSha() {
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}`;
+      const res = await fetch(apiUrl, { headers: ghHeaders() });
+      if (res.ok) { return (await res.json()).sha; }
+      return null;
+    }
+
+    async function pushResults() {
+      if (!getToken() && !ensureToken()) {
+        setSaveStatus("error");
+        return;
+      }
+      setSaveStatus("saving");
+      try {
+        const sha = await getResultsSha();
+        const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+        const body = {
+          message: "Atualiza placares",
+          content: toBase64Utf8(JSON.stringify(resultsData, null, 2)),
+          branch: GH.branch
+        };
+        if (sha) body.sha = sha;
+        const res = await fetch(apiUrl, {
+          method: "PUT",
+          headers: { ...ghHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        if (res.status === 401 || res.status === 403) {
+          clearToken();
+          setSaveStatus("error");
+          window.alert("Token inválido ou sem permissão. Informe-o novamente ao salvar.");
+          return;
+        }
+        if (!res.ok) { setSaveStatus("error"); return; }
+        setSaveStatus("saved");
+      } catch (e) {
+        setSaveStatus("error");
+      }
+    }
+
+    function setSaveStatus(state) {
+      if (!saveStatus) return;
+      if (!adminMode || !state) { saveStatus.textContent = ""; saveStatus.className = "save-status"; return; }
+      const map = { saving: "Salvando…", saved: "Salvo ✓", error: "Erro ao salvar" };
+      saveStatus.textContent = map[state] || "";
+      saveStatus.className = "save-status " + state;
+    }
+
+    function updateResultBoxesEditable() {
+      container.querySelectorAll(".result-box").forEach(input => {
+        input.disabled = !adminMode;
+      });
+    }
+
+    adminButton.addEventListener("click", () => {
+      if (adminMode) {
+        setAdminMode(false);
+      } else {
+        openAdminModal();
+      }
+    });
+
+    adminCancel.addEventListener("click", closeAdminModal);
+
+    function submitPin() {
+      const entered = pinInputs.map(i => i.value).join("");
+      if (entered.toUpperCase() === ADMIN_PASSWORD) {
+        setAdminMode(true);
+        closeAdminModal();
+        ensureToken();
+      } else {
+        pinError.hidden = false;
+        pinInputs.forEach(i => (i.value = ""));
+        pinInputs[0].focus();
+      }
+    }
+
+    adminConfirm.addEventListener("click", submitPin);
+
+    pinInputs.forEach((input, idx) => {
+      input.addEventListener("input", () => {
+        if (input.value && idx < pinInputs.length - 1) {
+          pinInputs[idx + 1].focus();
+        }
+        if (pinInputs.every(i => i.value)) {
+          submitPin();
+        }
+      });
+      input.addEventListener("keydown", e => {
+        if (e.key === "Backspace" && !input.value && idx > 0) {
+          pinInputs[idx - 1].focus();
+        } else if (e.key === "Enter") {
+          submitPin();
+        }
+      });
+    });
+
+    adminOverlay.addEventListener("click", e => {
+      if (e.target === adminOverlay) closeAdminModal();
+    });
 
     function render() {
       const selected = dateInput.value;
+      dateButton.textContent = formatDate(selected);
       const dayGames = games.filter(g => g.d === selected);
 
       if (dayGames.length === 0) {
@@ -407,9 +853,9 @@
               <span class="team">${g.a}</span>
             </span>
             <span class="match-result">
-              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" aria-label="Gols ${g.h}" />
+              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
               <span class="result-x">x</span>
-              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" aria-label="Gols ${g.a}" />
+              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" data-key="${gameKey(g)}" aria-label="Gols ${g.a}" />
             </span>
           </div>
         </th>`).join("");
@@ -464,8 +910,21 @@
 
       // Recalcula os scores e liga os eventos dos campos de placar
       container.querySelectorAll(".result-box").forEach(input => {
-        input.addEventListener("input", () => recomputeGame(input.dataset.game));
+        const key = input.dataset.key;
+        const side = input.dataset.side;
+        const val = resultsData[key] && resultsData[key][side];
+        if (val !== undefined && val !== null && val !== "") {
+          input.value = val;
+        }
+        input.addEventListener("input", () => {
+          const k = input.dataset.key;
+          if (!resultsData[k]) resultsData[k] = { h: "", a: "" };
+          resultsData[k][input.dataset.side] = input.value;
+          recomputeGame(input.dataset.game);
+          schedulePush();
+        });
       });
+      updateResultBoxesEditable();
       dayGames.forEach((_, gIndex) => recomputeGame(gIndex));
     }
 
@@ -514,8 +973,13 @@
       });
     }
 
-    dateInput.addEventListener("change", render);
+    dateInput.addEventListener("change", () => {
+      fetchResults().then(render);
+    });
+
+    resultsData = loadCache();
     render();
+    fetchResults().then(render);
   </script>
 </body>
 </html>
