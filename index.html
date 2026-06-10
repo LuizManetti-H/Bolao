@@ -214,6 +214,25 @@
       border-radius: 14px;
       box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
       border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .board {
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .name-table {
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 1;
+      background: #fff;
+      box-shadow: 2px 0 5px rgba(15, 23, 42, 0.12);
+    }
+
+    .scroll-area {
+      flex: 1 1 auto;
+      min-width: 0;
       overflow-x: auto;
       overflow-y: hidden;
     }
@@ -441,10 +460,6 @@
       letter-spacing: 0.6px;
       vertical-align: bottom;
       width: 145px;
-      position: sticky;
-      left: 0;
-      z-index: 3;
-      box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
     }
 
     .name-col-box {
@@ -478,10 +493,6 @@
       text-align: left;
       white-space: nowrap;
       width: 145px;
-      position: sticky;
-      left: 0;
-      z-index: 2;
-      box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
     }
 
     .name {
@@ -569,11 +580,7 @@
       letter-spacing: 0.6px;
       font-weight: 700;
       color: var(--muted);
-      position: sticky;
-      left: 0;
-      z-index: 2;
       background: #f8fafc;
-      box-shadow: 2px 0 4px rgba(15, 23, 42, 0.12);
       text-align: left;
       white-space: nowrap;
     }
@@ -660,7 +667,7 @@
     <p>
       O site mostra apenas os jogos da primeira fase da Copa do Mundo FIFA 2026.<br>
       Clique em "Data dos jogos" para alterar a data.<br>
-      1.0
+      1.1
     </p>
   </section>
 
@@ -1007,6 +1014,25 @@
       if (e.target === adminOverlay) closeAdminModal();
     });
 
+    // Sincroniza a altura do cabeçalho e do rodapé da coluna fixa com a tabela de jogos
+    function syncBoardHeights() {
+      const nameTable = container.querySelector(".name-table");
+      const gamesTable = container.querySelector(".games-table");
+      if (!nameTable || !gamesTable) return;
+      const nHead = nameTable.querySelector("thead th");
+      const nFoot = nameTable.querySelector("tfoot td");
+      const gHeadRow = gamesTable.querySelector("thead tr");
+      const gFootRow = gamesTable.querySelector("tfoot tr");
+      nHead.style.height = "auto";
+      nFoot.style.height = "auto";
+      const headH = gHeadRow.getBoundingClientRect().height;
+      const footH = gFootRow.getBoundingClientRect().height;
+      nHead.style.height = headH + "px";
+      nFoot.style.height = footH + "px";
+    }
+
+    window.addEventListener("resize", syncBoardHeights);
+
     function render() {
       const selected = dateInput.value;
       dateButton.textContent = formatDate(selected);
@@ -1042,21 +1068,22 @@
         </th>`).join("");
 
       // Linhas: nome do participante + palpite em cada jogo
-      const bodyRows = participants.map((name, pIndex) => {
+      const nameRows = participants.map((name, pIndex) => `
+          <tr>
+            <td class="name">
+              <span class="name-label">${name}</span>
+              <span class="total-box" data-participant="${pIndex}">0</span>
+            </td>
+          </tr>`).join("");
+
+      const scoreRows = participants.map((name, pIndex) => {
         const cells = dayGames.map((g, gIndex) =>
           `<td class="score">
             <span class="pred">${g.p[pIndex].replace(/x/i, '<span class="pred-x">x</span>')}</span>
             <span class="pts" data-game="${gIndex}" data-pred="${g.p[pIndex]}"></span>
           </td>`
         ).join("");
-        return `
-          <tr>
-            <td class="name">
-              <span class="name-label">${name}</span>
-              <span class="total-box" data-participant="${pIndex}">0</span>
-            </td>
-            ${cells}
-          </tr>`;
+        return `<tr>${cells}</tr>`;
       }).join("");
 
       // Rodapé: resumo de palpites por jogo, do mais ao menos votado
@@ -1076,21 +1103,35 @@
       }).join("");
 
       container.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th class="name-col"><span class="name-col-box">Placar Geral</span></th>
-              ${headerCells}
-            </tr>
-          </thead>
-          <tbody>${bodyRows}</tbody>
-          <tfoot>
-            <tr>
-              <td class="tally-label">Palpites</td>
-              ${footerCells}
-            </tr>
-          </tfoot>
-        </table>`;
+        <div class="board">
+          <table class="name-table">
+            <thead>
+              <tr>
+                <th class="name-col"><span class="name-col-box">Placar Geral</span></th>
+              </tr>
+            </thead>
+            <tbody>${nameRows}</tbody>
+            <tfoot>
+              <tr>
+                <td class="tally-label">Palpites</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="scroll-area">
+            <table class="games-table">
+              <thead>
+                <tr>${headerCells}</tr>
+              </thead>
+              <tbody>${scoreRows}</tbody>
+              <tfoot>
+                <tr>${footerCells}</tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>`;
+
+      syncBoardHeights();
+      requestAnimationFrame(syncBoardHeights);
 
       // Recalcula os scores e liga os eventos dos campos de placar
       container.querySelectorAll(".result-box").forEach(input => {
