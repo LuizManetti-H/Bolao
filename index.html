@@ -840,6 +840,25 @@
       return `${weekdays[date.getDay()]}, ${d} de ${months[m - 1]} de ${y}`;
     }
 
+    // Os horários no data.js estão em EDT (UTC-4). Converte apenas o HORÁRIO de
+    // cada jogo para o fuso local do usuário; a data exibida/filtrada permanece
+    // sendo a data original (EDT).
+    function gameLocalDateTime(g) {
+      const [h, mi] = g.t.split(":");
+      const hh = String(h).padStart(2, "0");
+      const mm = String(mi ?? "0").padStart(2, "0");
+      return new Date(`${g.d}T${hh}:${mm}:00-04:00`);
+    }
+    function toLocalTimeStr(dt) {
+      const h = String(dt.getHours()).padStart(2, "0");
+      const mi = String(dt.getMinutes()).padStart(2, "0");
+      return `${h}:${mi}`;
+    }
+    // Precomputa a hora local de cada jogo (a data permanece g.d)
+    games.forEach(g => {
+      g._lt = toLocalTimeStr(gameLocalDateTime(g));
+    });
+
     dateButton.addEventListener("click", () => {
       if (typeof dateInput.showPicker === "function") {
         dateInput.showPicker();
@@ -1216,7 +1235,7 @@
       const headerCells = dayGames.map((g, gIndex) => `
         <th>
           <div class="match-header">
-            <span class="match-time">${g.t}</span>
+            <span class="match-time">${g._lt}</span>
             <span class="match-teams">
               <span class="${teamClass(g.h)}">${g.h}</span>
               <span class="team-x">x</span>
