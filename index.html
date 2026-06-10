@@ -699,14 +699,47 @@
       return `${g.d}|${g.h}|${g.a}`;
     }
 
+    // Placares alterados localmente que ainda podem não ter propagado no CDN público
+    const pendingKeys = new Set();
+
+    // Decodifica conteúdo base64 (UTF-8) vindo da API do GitHub
+    function fromBase64Utf8(b64) {
+      return decodeURIComponent(escape(atob(b64.replace(/\n/g, ""))));
+    }
+
+    // Mescla os dados remotos preservando alterações locais ainda pendentes
+    function mergeRemote(remote) {
+      const merged = remote && typeof remote === "object" ? { ...remote } : {};
+      pendingKeys.forEach(k => {
+        if (resultsData[k]) merged[k] = resultsData[k];
+      });
+      resultsData = merged;
+      saveCache();
+    }
+
     // Lê os placares publicados no repositório (todos os visitantes)
     async function fetchResults() {
+      // Com token, usa a API autenticada (sem cache de CDN) para refletir os salvamentos na hora
+      if (getToken()) {
+        try {
+          const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}&t=${Date.now()}`;
+          const res = await fetch(apiUrl, { headers: ghHeaders(), cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            knownSha = data.sha || knownSha;
+            mergeRemote(JSON.parse(fromBase64Utf8(data.content)));
+            return;
+          }
+          if (res.status === 404) { mergeRemote({}); return; }
+        } catch (e) {
+          // cai para a leitura pública abaixo
+        }
+      }
       try {
         const url = `https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/${GH.path}?t=${Date.now()}`;
         const res = await fetch(url, { cache: "no-store" });
         if (res.ok) {
-          resultsData = await res.json();
-          saveCache();
+          mergeRemote(await res.json());
         }
       } catch (e) {
         // Sem rede ou ainda não publicado: mantém o cache local
@@ -799,6 +832,7 @@
       if (res.ok) {
         const data = await res.json();
         knownSha = data && data.content ? data.content.sha : null;
+        pendingKeys.clear();
         return true;
       }
 
@@ -985,6 +1019,7 @@
           const k = input.dataset.key;
           if (!resultsData[k]) resultsData[k] = { h: "", a: "" };
           resultsData[k][input.dataset.side] = input.value;
+          pendingKeys.add(k);
           recomputeGame(input.dataset.game);
           schedulePush();
         });
@@ -997,6 +1032,7 @@
           const k = x.dataset.key;
           const gIndex = x.dataset.game;
           resultsData[k] = { h: "", a: "" };
+          pendingKeys.add(k);
           container.querySelectorAll(`.result-box[data-game="${gIndex}"]`).forEach(inp => { inp.value = ""; });
           recomputeGame(gIndex);
           schedulePush();
