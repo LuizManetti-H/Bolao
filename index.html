@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bolão</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #1e293b;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #16a34a;
+      --accent-soft: #dcfce7;
+      --header-grad-1: #1e3a8a;
+      --header-grad-2: #16a34a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(120deg, var(--header-grad-1), var(--header-grad-2));
+      color: #fff;
+      padding: 18px 24px 34px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 0.5px;
+    }
+
+    header .subtitle {
+      margin: 4px 0 0;
+      font-size: 1rem;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
+    .intro {
+      max-width: 1100px;
+      margin: -18px auto 0;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px 26px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      position: relative;
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px 60px;
+    }
+
+    .matches-grid {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .match-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+    }
+
+    .match-result {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 6px;
+    }
+
+    .match-teams {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .match-teams .team {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.2;
+      height: 2.4em;
+    }
+
+    .match-teams .team-x {
+      line-height: 1.2;
+      height: 1.2em;
+    }
+
+    .match-time {
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .result-box {
+      width: 34px;
+      padding: 4px 0;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      border: none;
+      border-radius: 6px;
+      background: #fff;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .result-box::-webkit-outer-spin-button,
+    .result-box::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .result-box:focus {
+      outline: 2px solid var(--accent);
+    }
+
+    .result-x {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .match-date {
+      max-width: 1100px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .match-date label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .match-date input[type="date"] {
+      font: inherit;
+      font-weight: 600;
+      color: var(--text);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+    }
+
+    .match-date input[type="date"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    table {
+      width: auto;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    thead th {
+      text-align: center;
+      font-size: 0.85rem;
+      padding: 16px 10px;
+      background: var(--bg-soft);
+      color: #fff;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      width: 135px;
+      vertical-align: top;
+    }
+
+    thead th:last-child { border-right: none; }
+
+    thead th.name-col {
+      text-align: left;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      vertical-align: bottom;
+      width: 110px;
+    }
+
+    tbody td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    tbody td:last-child { border-right: none; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) { background: #fbfdff; }
+    tbody tr:hover { background: var(--accent-soft); }
+
+    .name {
+      font-weight: 600;
+      text-align: left;
+      white-space: nowrap;
+      background: #f8fafc;
+      width: 110px;
+    }
+
+    .score {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .score .pred {
+      display: inline-block;
+    }
+
+    .pts {
+      display: inline-block;
+      min-width: 24px;
+      margin-left: 6px;
+      padding: 1px 5px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pts-pos { background: #dcfce7; color: #15803d; }
+    .pts-one { background: #fef9c3; color: #a16207; }
+    .pts-neg { background: #fee2e2; color: #b91c1c; }
+    .pts-zero { background: #f1f5f9; color: #64748b; }
+
+    tfoot td {
+      border-top: 2px solid var(--border);
+      border-right: 1px solid var(--border);
+      vertical-align: top;
+      padding: 12px 10px;
+      background: #f8fafc;
+    }
+
+    tfoot td:last-child { border-right: none; }
+
+    .tally-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .tally ul {
+      list-style: none;
+      margin: 0 auto;
+      padding: 0;
+      width: fit-content;
+    }
+
+    .tally li {
+      display: grid;
+      grid-template-columns: auto 28px;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.9rem;
+    }
+
+    .tally-score {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--text);
+      text-align: right;
+    }
+
+    .tally-qty {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 999px;
+      min-width: 28px;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 1px 7px;
+      font-size: 0.8rem;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 24px;
+    }
+
+    .no-matches {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1rem;
+      padding: 32px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bolão</h1>
+    <p class="subtitle">Copa do Mundo FIFA 2026 - Primeira Fase</p>
+  </header>
+
+  <section class="intro">
+    <p>
+      O Bolão mostra apenas os jogos da primeira fase da Copa do Mundo FIFA 2026.<br>
+      Navegue por cada jogo abaixo para ver os palpites de cada participante.
+    </p>
+  </section>
+
+  <div class="match-date">
+    <label for="matchDate">Data dos jogos:</label>
+    <input
+      type="date"
+      id="matchDate"
+      value="2026-06-11"
+      min="2026-06-11"
+      max="2026-06-27"
+    />
+  </div>
+
+  <main>
+    <div class="matches-grid" id="matches"></div>
+    <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
+  </main>
+
+  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase</footer>
+
+  <script src="data.js"></script>
+  <script>
+    const { participants, games } = window.BOLAO_DATA;
+
+    const dateInput = document.getElementById("matchDate");
+    const container = document.getElementById("matches");
+    const noMatches = document.getElementById("noMatches");
+
+    function render() {
+      const selected = dateInput.value;
+      const dayGames = games.filter(g => g.d === selected);
+
+      if (dayGames.length === 0) {
+        container.innerHTML = "";
+        noMatches.hidden = false;
+        return;
+      }
+      noMatches.hidden = true;
+
+      // Cabeçalho: coluna de nomes + uma coluna por jogo
+      const headerCells = dayGames.map((g, gIndex) => `
+        <th>
+          <div class="match-header">
+            <span class="match-time">${g.t}</span>
+            <span class="match-teams">
+              <span class="team">${g.h}</span>
+              <span class="team-x">x</span>
+              <span class="team">${g.a}</span>
+            </span>
+            <span class="match-result">
+              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" aria-label="Gols ${g.h}" />
+              <span class="result-x">x</span>
+              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" aria-label="Gols ${g.a}" />
+            </span>
+          </div>
+        </th>`).join("");
+
+      // Linhas: nome do participante + palpite em cada jogo
+      const bodyRows = participants.map((name, pIndex) => {
+        const cells = dayGames.map((g, gIndex) =>
+          `<td class="score">
+            <span class="pred">${g.p[pIndex]}</span>
+            <span class="pts" data-game="${gIndex}" data-pred="${g.p[pIndex]}"></span>
+          </td>`
+        ).join("");
+        return `
+          <tr>
+            <td class="name">${name}</td>
+            ${cells}
+          </tr>`;
+      }).join("");
+
+      // Rodapé: resumo de palpites por jogo, do mais ao menos votado
+      const footerCells = dayGames.map(g => {
+        const counts = {};
+        g.p.forEach(score => {
+          counts[score] = (counts[score] || 0) + 1;
+        });
+        const summary = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([score, qty]) => `
+            <li>
+              <span class="tally-score">${score}</span>
+              <span class="tally-qty">${qty}</span>
+            </li>`).join("");
+        return `<td class="tally"><ul>${summary}</ul></td>`;
+      }).join("");
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th class="name-col"></th>
+              ${headerCells}
+            </tr>
+          </thead>
+          <tbody>${bodyRows}</tbody>
+          <tfoot>
+            <tr>
+              <td class="tally-label">Palpites</td>
+              ${footerCells}
+            </tr>
+          </tfoot>
+        </table>`;
+
+      // Recalcula os scores e liga os eventos dos campos de placar
+      container.querySelectorAll(".result-box").forEach(input => {
+        input.addEventListener("input", () => recomputeGame(input.dataset.game));
+      });
+      dayGames.forEach((_, gIndex) => recomputeGame(gIndex));
+    }
+
+    // Converte "2 x 1" em [2, 1]; retorna null se inválido
+    function parseScore(text) {
+      const m = String(text).split("x");
+      if (m.length !== 2) return null;
+      const h = parseInt(m[0], 10);
+      const a = parseInt(m[1], 10);
+      if (Number.isNaN(h) || Number.isNaN(a)) return null;
+      return [h, a];
+    }
+
+    // Pontuação: placar exato = 3, placar invertido = -2, só vencedor = 1, erro = 0
+    function computePoints(pred, result) {
+      const [ph, pa] = pred;
+      const [rh, ra] = result;
+      if (ph === rh && pa === ra) return 3;
+      if (ph === ra && pa === rh && ph !== pa) return -2;
+      const ps = Math.sign(ph - pa);
+      const rs = Math.sign(rh - ra);
+      if (ps === rs) return 1;
+      return 0;
+    }
+
+    function recomputeGame(gIndex) {
+      const hInput = container.querySelector(`.result-box[data-game="${gIndex}"][data-side="h"]`);
+      const aInput = container.querySelector(`.result-box[data-game="${gIndex}"][data-side="a"]`);
+      const hasResult = hInput.value !== "" && aInput.value !== "";
+      const result = hasResult ? [parseInt(hInput.value, 10), parseInt(aInput.value, 10)] : null;
+
+      container.querySelectorAll(`.pts[data-game="${gIndex}"]`).forEach(span => {
+        if (!result) {
+          span.innerHTML = "&nbsp;";
+          span.className = "pts pts-zero";
+          return;
+        }
+        const pred = parseScore(span.dataset.pred);
+        const points = pred ? computePoints(pred, result) : 0;
+        span.textContent = points > 0 ? `+${points}` : points < 0 ? `${points}` : "-";
+        const cls = points === 3 ? "pts-pos"
+          : points === 1 ? "pts-one"
+          : points < 0 ? "pts-neg"
+          : "pts-zero";
+        span.className = "pts " + cls;
+      });
+    }
+
+    dateInput.addEventListener("change", render);
+    render();
+  </script>
+</body>
+</html>
