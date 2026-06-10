@@ -900,7 +900,7 @@
     <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
   </main>
 
-  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v1.0</footer>
+  <footer>Bolão · Copa do Mundo FIFA 2026 · Primeira Fase · v0.9</footer>
   </div>
 
   <script src="data.js"></script>
@@ -922,12 +922,22 @@
 
     function applyScale() {
       pageScale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(pageScale * 100) / 100));
-      zoomWrap.style.zoom = pageScale;
-      if (stickyHead) stickyHead.style.zoom = pageScale;
+      zoomWrap.style.transformOrigin = "top left";
+      zoomWrap.style.transform = "scale(" + pageScale + ")";
+      zoomWrap.style.width = (100 / pageScale) + "%";
+      if (stickyHead) {
+        stickyHead.style.transformOrigin = "top left";
+        stickyHead.style.transform = "scale(" + pageScale + ")";
+      }
       scaleValue.textContent = Math.round(pageScale * 100) + "%";
       localStorage.setItem("bolaoScale", String(pageScale));
-      if (typeof updateStickyGeometry === "function") updateStickyGeometry();
-      if (typeof updateStickyHeader === "function") updateStickyHeader();
+      // Compensa a altura: transform não reflui o layout, então a altura
+      // natural precisa ser corrigida para a rolagem refletir o conteúdo escalado.
+      requestAnimationFrame(() => {
+        document.body.style.height = (zoomWrap.offsetHeight * pageScale) + "px";
+        if (typeof updateStickyGeometry === "function") updateStickyGeometry();
+        if (typeof updateStickyHeader === "function") updateStickyHeader();
+      });
     }
 
     document.getElementById("scaleMinus").addEventListener("click", () => {
@@ -1353,7 +1363,8 @@
 
       stickyHead = document.createElement("div");
       stickyHead.className = "sticky-head";
-      stickyHead.style.zoom = pageScale;
+      stickyHead.style.transformOrigin = "top left";
+      stickyHead.style.transform = "scale(" + pageScale + ")";
 
       const cloneBoard = document.createElement("div");
       cloneBoard.className = "board";
@@ -1423,9 +1434,10 @@
       if (!stickyHead) return;
       const realScroll = container.querySelector(".scroll-area");
       const rect = container.getBoundingClientRect();
-      // stickyHead tem zoom próprio (pageScale); divide para não escalar 2x
+      // O clone usa transform: scale (origem top-left). O left (fixed) não é
+      // escalado, mas a largura interna sim — então divide só a largura.
       const s = pageScale || 1;
-      stickyHead.style.left = (rect.left / s) + "px";
+      stickyHead.style.left = rect.left + "px";
       stickyHead.style.width = (rect.width / s) + "px";
       if (realScroll && stickyScroll) {
         stickyScroll.scrollLeft = realScroll.scrollLeft;
@@ -1437,7 +1449,7 @@
       const board = container.querySelector(".board");
       if (!board) return;
       const rect = board.getBoundingClientRect();
-      const headH = stickyHead.offsetHeight || 0;
+      const headH = (stickyHead.offsetHeight || 0) * (pageScale || 1);
       const shouldShow = rect.top < 0 && rect.bottom > headH + 4;
       if (shouldShow) {
         if (!stickyHead.classList.contains("visible")) {
@@ -1591,7 +1603,10 @@
 
       updateResultBoxesEditable();
       dayGames.forEach((_, gIndex) => recomputeGame(gIndex));
-      requestAnimationFrame(setupStickyHeader);
+      requestAnimationFrame(() => {
+        setupStickyHeader();
+        if (typeof applyScale === "function") applyScale();
+      });
     }
 
     // Converte "2 x 1" em [2, 1]; retorna null se inválido
