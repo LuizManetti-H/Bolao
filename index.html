@@ -306,6 +306,11 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Destaque das linhas do pódio no ranking */
+    .ranking-table tbody tr.lead-1 td { background: #0094C8; color: #ffffff; }
+    .ranking-table tbody tr.lead-2 td { background: #8BE1FF; color: #000000; }
+    .ranking-table tbody tr.lead-3 td { background: #CDF2FF; color: #000000; }
+
     .ranking-table tbody tr:last-child th,
     .ranking-table tbody tr:last-child td {
       border-bottom: none;
@@ -802,7 +807,15 @@
       font-weight: 700;
       color: var(--text);
       text-align: right;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0 4px;
     }
+
+    /* Destaque ao clicar em um palpite do rodapé */
+    .tally-score.highlight,
+    .name.highlight,
+    .score.highlight { background: #fef9c3 !important; }
 
     .tally-qty {
       font-variant-numeric: tabular-nums;
@@ -1342,8 +1355,12 @@
         const pos = r.pts === lastPts ? lastPos : lastPos + 1;
         lastPts = r.pts;
         lastPos = pos;
+        const leadClass = pos === 1 ? " class=\"lead-1\""
+          : pos === 2 ? " class=\"lead-2\""
+          : pos === 3 ? " class=\"lead-3\""
+          : "";
         return `
-          <tr>
+          <tr${leadClass}>
             <td class="rk-pos">${pos}</td>
             <td class="rk-name">${r.name}</td>
             <td class="rk-pts">${r.pts}</td>
@@ -1375,6 +1392,32 @@
     // Clique no cabeçalho "Placar Geral" abre o ranking
     container.addEventListener("click", e => {
       if (e.target.closest(".name-col-box")) openRanking();
+    });
+
+    // Realça o palpite clicado no rodapé, o nome do jogador e o palpite dele
+    // para o jogo. Clicar em qualquer outro lugar da tela limpa o destaque.
+    function clearTallyHighlight() {
+      document
+        .querySelectorAll(".tally-score.highlight, .name.highlight, .score.highlight")
+        .forEach(el => el.classList.remove("highlight"));
+    }
+
+    document.addEventListener("click", e => {
+      const tally = e.target.closest(".tally-score");
+      const wasActive = tally && tally.classList.contains("highlight");
+      clearTallyHighlight();
+      if (!tally || wasActive) return;
+      const gIndex = tally.dataset.game;
+      const score = tally.dataset.score;
+      tally.classList.add("highlight");
+      container
+        .querySelectorAll(`.score[data-game="${gIndex}"][data-pred="${score}"]`)
+        .forEach(cell => {
+          cell.classList.add("highlight");
+          const p = cell.dataset.participant;
+          const nameCell = container.querySelector(`.name[data-participant="${p}"]`);
+          if (nameCell) nameCell.classList.add("highlight");
+        });
     });
 
     // Sincroniza a altura do cabeçalho e do rodapé da coluna fixa com a tabela de jogos
@@ -1573,7 +1616,7 @@
       // Linhas: nome do participante + palpite em cada jogo
       const nameRows = participants.map((name, pIndex) => `
           <tr>
-            <td class="name">
+            <td class="name" data-participant="${pIndex}">
               <span class="name-label">${name}</span>
               <span class="total-box" data-participant="${pIndex}">0</span>
             </td>
@@ -1581,7 +1624,7 @@
 
       const scoreRows = participants.map((name, pIndex) => {
         const cells = dayGames.map((g, gIndex) =>
-          `<td class="score">
+          `<td class="score" data-game="${gIndex}" data-participant="${pIndex}" data-pred="${g.p[pIndex]}">
             <span class="pred">${g.p[pIndex].replace(/x/i, '<span class="pred-x">x</span>')}</span>
             <span class="pts" data-game="${gIndex}" data-pred="${g.p[pIndex]}"></span>
           </td>`
@@ -1590,7 +1633,7 @@
       }).join("");
 
       // Rodapé: resumo de palpites por jogo, do mais ao menos votado
-      const footerCells = dayGames.map(g => {
+      const footerCells = dayGames.map((g, gIndex) => {
         const counts = {};
         g.p.forEach(score => {
           counts[score] = (counts[score] || 0) + 1;
@@ -1599,7 +1642,7 @@
           .sort((a, b) => b[1] - a[1])
           .map(([score, qty]) => `
             <li>
-              <span class="tally-score">${score}</span>
+              <span class="tally-score" data-game="${gIndex}" data-score="${score}">${score}</span>
               <span class="tally-qty">${qty}</span>
             </li>`).join("");
         return `<td class="tally"><ul>${summary}</ul></td>`;
