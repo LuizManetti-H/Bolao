@@ -1518,6 +1518,12 @@
         });
       });
 
+      // Clicar no "Placar Geral" do cabeçalho flutuante também abre o ranking
+      const cloneNameBox = stickyHead.querySelector(".name-col-box");
+      if (cloneNameBox) {
+        cloneNameBox.addEventListener("click", openRanking);
+      }
+
       // Mantém a rolagem horizontal do clone sincronizada com a tabela real
       realScroll.addEventListener("scroll", () => {
         if (stickyScroll) stickyScroll.scrollLeft = realScroll.scrollLeft;
