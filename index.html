@@ -466,6 +466,14 @@
       font-weight: 600;
     }
 
+    .admin-mode .match-time {
+      cursor: pointer;
+    }
+
+    .match-time.live {
+      background: rgba(220, 38, 38, 0.9);
+    }
+
     .result-box {
       width: 30px;
       height: 30px;
@@ -512,6 +520,12 @@
     .admin-mode .result-x:hover {
       background: #fff;
       color: var(--accent);
+    }
+
+    /* Placar em andamento (vermelho) x encerrado (preto, padrão) */
+    .match-result.live .result-box,
+    .match-result.live .result-box:disabled {
+      color: #dc2626;
     }
 
     .match-date {
@@ -1254,6 +1268,16 @@
       });
     }
 
+    // Aplica o status do jogo: "live" deixa o placar vermelho; o padrão (encerrado) deixa preto.
+    function applyMatchStatus(key) {
+      const isLive = !!(resultsData[key] && resultsData[key].status === "live");
+      [container, stickyHead].forEach(root => {
+        if (!root) return;
+        root.querySelectorAll(`.match-time[data-key="${key}"]`).forEach(t => t.classList.toggle("live", isLive));
+        root.querySelectorAll(`.match-result[data-key="${key}"]`).forEach(r => r.classList.toggle("live", isLive));
+      });
+    }
+
     adminButton.addEventListener("click", () => {
       if (adminMode) {
         setAdminMode(false);
@@ -1442,6 +1466,15 @@
         });
       });
 
+      // Espelha o clique no horário (alterna o status do jogo)
+      stickyHead.querySelectorAll(".match-time").forEach(cloneT => {
+        const key = cloneT.dataset.key;
+        cloneT.addEventListener("click", () => {
+          const real = container.querySelector(`.match-time[data-key="${key}"]`);
+          if (real) real.click();
+        });
+      });
+
       // Mantém a rolagem horizontal do clone sincronizada com a tabela real
       realScroll.addEventListener("scroll", () => {
         if (stickyScroll) stickyScroll.scrollLeft = realScroll.scrollLeft;
@@ -1523,13 +1556,13 @@
       const headerCells = dayGames.map((g, gIndex) => `
         <th>
           <div class="match-header">
-            <span class="match-time">${g._lt}</span>
+            <span class="match-time" data-game="${gIndex}" data-key="${gameKey(g)}">${g._lt}</span>
             <span class="match-teams">
               <span class="${teamClass(g.h)}">${g.h}</span>
               <span class="team-x">x</span>
               <span class="${teamClass(g.a)}">${g.a}</span>
             </span>
-            <span class="match-result">
+            <span class="match-result" data-key="${gameKey(g)}">
               <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
               <span class="result-x" data-game="${gIndex}" data-key="${gameKey(g)}">x</span>
               <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" data-key="${gameKey(g)}" aria-label="Gols ${g.a}" />
@@ -1635,8 +1668,26 @@
         });
       });
 
+      // Clicar no horário alterna o status do jogo (somente admin):
+      // em andamento (placar vermelho) <-> encerrado (placar preto)
+      container.querySelectorAll(".match-time").forEach(t => {
+        t.addEventListener("click", () => {
+          if (!adminMode) return;
+          const k = t.dataset.key;
+          if (!resultsData[k]) resultsData[k] = { h: "", a: "" };
+          const isLive = resultsData[k].status === "live";
+          resultsData[k].status = isLive ? "finished" : "live";
+          pendingKeys.add(k);
+          applyMatchStatus(k);
+          schedulePush();
+        });
+      });
+
       updateResultBoxesEditable();
-      dayGames.forEach((_, gIndex) => recomputeGame(gIndex));
+      dayGames.forEach((g, gIndex) => {
+        recomputeGame(gIndex);
+        applyMatchStatus(gameKey(g));
+      });
       requestAnimationFrame(() => {
         setupStickyHeader();
         if (typeof applyScale === "function") applyScale();
