@@ -302,14 +302,15 @@
       width: 70px;
       text-align: center;
       font-weight: 800;
-      color: #1e3a8a;
+      color: #000000;
       font-variant-numeric: tabular-nums;
     }
 
     /* Destaque das linhas do pódio no ranking */
+    .ranking-table tbody tr td { background: #ffffff; color: #000000; }
     .ranking-table tbody tr.lead-1 td { background: #0094C8; color: #ffffff; }
     .ranking-table tbody tr.lead-2 td { background: #8BE1FF; color: #000000; }
-    .ranking-table tbody tr.lead-3 td { background: #CDF2FF; color: #000000; }
+    .ranking-table tbody tr.lead-3 td { background: #D9F5FF; color: #000000; }
 
     .ranking-table tbody tr:last-child th,
     .ranking-table tbody tr:last-child td {
@@ -752,18 +753,18 @@
       padding: 4px 8px;
       border-radius: 8px;
       border: 1px solid #000;
-      background: #1e3a8a;
-      color: #fff;
+      background: #0094C8;
+      color: #ffffff;
       font-weight: 800;
       font-size: 0.78rem;
       font-variant-numeric: tabular-nums;
       text-align: center;
     }
 
-    .total-box.rank-1 { background: #1e3a8a; color: #fff; }
-    .total-box.rank-2 { background: #3b82f6; color: #fff; }
-    .total-box.rank-3 { background: #bfdbfe; color: #1e3a8a; }
-    .total-box.rank-none { background: #fff; color: #0f172a; }
+    .total-box.rank-1 { background: #0094C8; color: #ffffff; }
+    .total-box.rank-2 { background: #8BE1FF; color: #000000; }
+    .total-box.rank-3 { background: #D9F5FF; color: #000000; }
+    .total-box.rank-none { background: #ffffff; color: #000000; }
 
     tfoot td {
       border-top: 2px solid var(--border);
