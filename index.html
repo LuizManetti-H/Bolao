@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bolão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Mono:wght@600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #0f172a;
@@ -429,8 +432,6 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      margin-top: auto;
-      padding-top: 6px;
     }
 
     .match-teams {
@@ -440,6 +441,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      flex: 1;
+      justify-content: center;
     }
 
     .match-teams .team {
@@ -649,6 +652,49 @@
     }
 
     thead th:last-child { border-right: none; }
+
+    /* Colunas mais largas a partir da Segunda Fase (28.Jun em diante) */
+    .games-table.wide-cols thead th { width: 200px; }
+
+    /* Times em uma única linha ("Time A" x "Time B") a partir da Segunda Fase */
+    .games-table.wide-cols .match-teams {
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Bandeira + sigla no mata-mata */
+    .team-flag {
+      height: 16px;
+      width: auto;
+      display: block;
+      border-radius: 2px;
+    }
+
+    /* Siglas em fonte monoespaçada (Red Hat Mono): cada letra ocupa a mesma
+       largura, então qualquer sigla de 3 letras fica do mesmo tamanho */
+    .team-sigla {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      line-height: 1;
+    }
+
+    .games-table.wide-cols .match-teams .team {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      height: auto;
+      line-height: 1;
+    }
+
+    .games-table.wide-cols .match-teams .team-x {
+      display: flex;
+      align-items: center;
+      height: auto;
+      line-height: 1;
+      position: relative;
+      top: -0.1em;
+    }
 
     thead th.name-col {
       text-align: center;
@@ -1123,6 +1169,63 @@
       return `${g.d}|${g.h}|${g.a}`;
     }
 
+    // Siglas e bandeiras dos times (usadas no mata-mata, a partir de 28.Jun).
+    // Chave = nome do time como no data.js; valor = [sigla, arquivo da bandeira].
+    const FLAGS_DIR = "../flags/";
+    const TEAM_INFO = {
+      "África do Sul": ["AFS", "AFS - Africa do Sul.png"],
+      "Alemanha": ["ALE", "ALE - Alemanha.png"],
+      "Argélia": ["ALG", "ALG - Argelia.png"],
+      "Arábia Saudita": ["ARA", "ARA - Arabia Saudita.png"],
+      "Argentina": ["ARG", "ARG - Argentina.png"],
+      "Austrália": ["AUS", "AUS - Australia.png"],
+      "Áustria": ["AUT", "AUT - Austria.png"],
+      "Bélgica": ["BEL", "BEL - Belgica.png"],
+      "Bósnia": ["BOS", "BOS - Bosnia.png"],
+      "Bósnia e Herzegovina": ["BOS", "BOS - Bosnia.png"],
+      "Brasil": ["BRA", "BRA - Brasil.png"],
+      "Canadá": ["CAN", "CAN - Canada.png"],
+      "Congo (RD)": ["CDR", "CDR - Congo.png"],
+      "Costa do Marfim": ["CIV", "CIV - Costa do Marfim.png"],
+      "Colômbia": ["COL", "COL - Colombia.png"],
+      "Coreia do Sul": ["COR", "COR - Coreia.png"],
+      "Croácia": ["CRO", "CRO - Croacia.png"],
+      "Curaçao": ["CUR", "CUR - Curacao.png"],
+      "Cabo Verde": ["CVE", "CVE - Cabo Verde.png"],
+      "Egito": ["EGI", "EGI - Egito.png"],
+      "Equador": ["EQU", "EQU - Ecuador.png"],
+      "Escócia": ["ESC", "ESC - Escocia.png"],
+      "Espanha": ["ESP", "ESP - Espanha.png"],
+      "Estados Unidos": ["EUA", "EUA - Estados Unidos.png"],
+      "França": ["FRA", "FRA - Franca.png"],
+      "Gana": ["GAN", "GAN - Gana.png"],
+      "Haiti": ["HAI", "HAI - Haiti.png"],
+      "Holanda": ["HOL", "HOL - Holanda.png"],
+      "Inglaterra": ["ING", "ING - Inglaterra.png"],
+      "Irã": ["IRA", "IRA - Iran.png"],
+      "Iraque": ["IRQ", "IRQ - Iraque.png"],
+      "Japão": ["JAP", "JAP - Japao.png"],
+      "Jordânia": ["JOR", "JOR - Jordania.png"],
+      "Marrocos": ["MAR", "MAR - Marrocos.png"],
+      "México": ["MEX", "MEX - Mexico.png"],
+      "Noruega": ["NOR", "NOR - Noruega.png"],
+      "Nova Zelândia": ["NZL", "NZL - Nova Zelandia.png"],
+      "Panamá": ["PAN", "PAN - Panama.png"],
+      "Paraguai": ["PAR", "PAR - Paraguai.png"],
+      "Portugal": ["POR", "POR - Portugal.png"],
+      "Catar": ["QAT", "QAT - Catar.png"],
+      "Senegal": ["SEN", "SEN - Senegal.png"],
+      "Suécia": ["SUE", "SUE - Suecia.png"],
+      "Suíça": ["SUI", "SUI - Suica.png"],
+      "Suiça": ["SUI", "SUI - Suica.png"],
+      "Tchéquia": ["TCH", "TCH - Rep. Tcheca.png"],
+      "Rep. Tcheca": ["TCH", "TCH - Rep. Tcheca.png"],
+      "Tunísia": ["TUN", "TUN - Tunisia.png"],
+      "Turquia": ["TUR", "TUR - Turquia.png"],
+      "Uruguai": ["URU", "URU - Uruguai.png"],
+      "Uzbequistão": ["UZB", "UZB - Uzbequistao.png"]
+    };
+
     // Placares alterados localmente que ainda podem não ter propagado no CDN público
     const pendingKeys = new Set();
 
@@ -1502,7 +1605,7 @@
       stickyScroll = document.createElement("div");
       stickyScroll.className = "scroll-area";
       const cloneGamesTable = document.createElement("table");
-      cloneGamesTable.className = "games-table";
+      cloneGamesTable.className = gamesTable.className;
       cloneGamesTable.appendChild(gamesTable.querySelector("thead").cloneNode(true));
       if (adminMode) cloneGamesTable.classList.add("admin-mode");
       stickyScroll.appendChild(cloneGamesTable);
@@ -1626,15 +1729,31 @@
       const longNames = new Set(["Costa do Marfim", "Arábia Saudita", "Nova Zelândia", "Estados Unidos"]);
       const teamClass = name => "team" + (longNames.has(name) ? " team-sm" : "");
 
+      // A partir da Segunda Fase (28.Jun) os confrontos usam bandeira + sigla
+      const isKnockout = selected >= "2026-06-28";
+      // Renderiza um time: mandante = bandeira + sigla; visitante = sigla + bandeira.
+      // Se o time não estiver no mapa (ex.: placeholders "2A", "W73"), usa o texto.
+      function renderTeam(name, side) {
+        const info = isKnockout ? TEAM_INFO[name] : null;
+        if (!info) {
+          // No mata-mata, placeholders (ex.: "1C", "W73") usam a mesma formatação das siglas
+          if (isKnockout) return `<span class="team"><span class="team-sigla">${name}</span></span>`;
+          return `<span class="${teamClass(name)}">${name}</span>`;
+        }
+        const img = `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${name}">`;
+        const sig = `<span class="team-sigla">${info[0]}</span>`;
+        return `<span class="team">${side === "h" ? img + sig : sig + img}</span>`;
+      }
+
       // Cabeçalho: coluna de nomes + uma coluna por jogo
       const headerCells = dayGames.map((g, gIndex) => `
         <th>
           <div class="match-header">
             <span class="match-time" data-game="${gIndex}" data-key="${gameKey(g)}">${g._lt}</span>
             <span class="match-teams">
-              <span class="${teamClass(g.h)}">${g.h}</span>
+              ${renderTeam(g.h, "h")}
               <span class="team-x">x</span>
-              <span class="${teamClass(g.a)}">${g.a}</span>
+              ${renderTeam(g.a, "a")}
             </span>
             <span class="match-result" data-key="${gameKey(g)}">
               <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
@@ -1706,7 +1825,7 @@
             </tfoot>
           </table>
           <div class="scroll-area">
-            <table class="games-table">
+            <table class="games-table${selected >= "2026-06-28" ? " wide-cols" : ""}">
               <thead>
                 <tr>${headerCells}</tr>
               </thead>
