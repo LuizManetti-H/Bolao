@@ -508,6 +508,43 @@
       outline: 2px solid var(--accent);
     }
 
+    .result-side {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .penalty-box {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      text-align: center;
+      line-height: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      background: #fff9c4;
+      -moz-appearance: textfield;
+      appearance: textfield;
+      display: none;
+    }
+
+    .match-result.show-penalties .penalty-box {
+      display: block;
+    }
+
+    .penalty-box::-webkit-outer-spin-button,
+    .penalty-box::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .penalty-box:focus {
+      outline: 2px solid var(--accent);
+    }
+
     .result-box:disabled {
       background: #fff;
       color: var(--text);
@@ -654,7 +691,7 @@
     thead th:last-child { border-right: none; }
 
     /* Colunas mais largas a partir da Segunda Fase (28.Jun em diante) */
-    .games-table.wide-cols thead th { width: 200px; }
+    .games-table.wide-cols thead th { width: 160px; }
 
     /* Times em uma única linha ("Time A" x "Time B") a partir da Segunda Fase */
     .games-table.wide-cols .match-teams {
@@ -694,6 +731,17 @@
       line-height: 1;
       position: relative;
       top: -0.1em;
+    }
+
+    .admin-mode .games-table.wide-cols .match-teams .team-x {
+      cursor: pointer;
+      padding: 0 4px;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .admin-mode .games-table.wide-cols .match-teams .team-x:hover {
+      background: #fff;
+      color: var(--accent);
     }
 
     thead th.name-col {
@@ -1113,6 +1161,9 @@
     const ADMIN_PASSWORD = "HEXABR";
     let adminMode = false;
 
+    // Jogos do mata-mata cujos boxes de pênaltis estão visíveis (alternado pelo admin no "x")
+    const penaltyKeys = new Set();
+
     const adminButton = document.getElementById("adminButton");
     const adminOverlay = document.getElementById("adminOverlay");
     const pinInputs = Array.from(document.querySelectorAll(".pin-box"));
@@ -1419,6 +1470,23 @@
       });
     }
 
+    // Retorna true se o jogo tem placar preenchido e empatado (gols iguais).
+    function isGameTied(key) {
+      const h = container.querySelector(`.result-box[data-key="${key}"][data-side="h"]`);
+      const a = container.querySelector(`.result-box[data-key="${key}"][data-side="a"]`);
+      if (!h || !a || h.value === "" || a.value === "") return false;
+      return parseInt(h.value, 10) === parseInt(a.value, 10);
+    }
+
+    // Oculta os boxes de pênaltis de um jogo (em ambas as tabelas) e desmarca a chave.
+    function hidePenalties(key) {
+      penaltyKeys.delete(key);
+      [container, stickyHead].forEach(root => {
+        if (!root) return;
+        root.querySelectorAll(`.match-result[data-key="${key}"]`).forEach(r => r.classList.remove("show-penalties"));
+      });
+    }
+
     adminButton.addEventListener("click", () => {
       if (adminMode) {
         setAdminMode(false);
@@ -1628,12 +1696,33 @@
           }
         });
       });
+      // Espelha a edição dos pênaltis feita no cabeçalho flutuante
+      stickyHead.querySelectorAll(".penalty-box").forEach(cloneInput => {
+        const key = cloneInput.dataset.key;
+        const side = cloneInput.dataset.side;
+        cloneInput.addEventListener("input", () => {
+          const real = container.querySelector(`.penalty-box[data-key="${key}"][data-side="${side}"]`);
+          if (real) {
+            real.value = cloneInput.value;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+      });
       stickyHead.querySelectorAll(".result-x").forEach(cloneX => {
         const key = cloneX.dataset.key;
         cloneX.addEventListener("click", () => {
           const real = container.querySelector(`.result-x[data-key="${key}"]`);
           if (real) real.click();
           syncStickyInputs();
+        });
+      });
+
+      // Espelha o clique no "x" do nome do jogo (mostra/oculta pênaltis)
+      stickyHead.querySelectorAll(".team-x").forEach(cloneX => {
+        const key = cloneX.dataset.key;
+        cloneX.addEventListener("click", () => {
+          const real = container.querySelector(`.team-x[data-key="${key}"]`);
+          if (real) real.click();
         });
       });
 
@@ -1670,6 +1759,12 @@
         const key = cloneInput.dataset.key;
         const side = cloneInput.dataset.side;
         const real = container.querySelector(`.result-box[data-key="${key}"][data-side="${side}"]`);
+        if (real) cloneInput.value = real.value;
+      });
+      stickyHead.querySelectorAll(".penalty-box").forEach(cloneInput => {
+        const key = cloneInput.dataset.key;
+        const side = cloneInput.dataset.side;
+        const real = container.querySelector(`.penalty-box[data-key="${key}"][data-side="${side}"]`);
         if (real) cloneInput.value = real.value;
       });
     }
@@ -1752,13 +1847,19 @@
             <span class="match-time" data-game="${gIndex}" data-key="${gameKey(g)}">${g._lt}</span>
             <span class="match-teams">
               ${renderTeam(g.h, "h")}
-              <span class="team-x">x</span>
+              <span class="team-x" data-game="${gIndex}" data-key="${gameKey(g)}">x</span>
               ${renderTeam(g.a, "a")}
             </span>
-            <span class="match-result" data-key="${gameKey(g)}">
-              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
+            <span class="match-result${penaltyKeys.has(gameKey(g)) ? " show-penalties" : ""}" data-key="${gameKey(g)}">
+              <span class="result-side">
+                ${isKnockout ? `<input type="number" min="0" class="penalty-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Pênaltis ${g.h}" />` : ""}
+                <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
+              </span>
               <span class="result-x" data-game="${gIndex}" data-key="${gameKey(g)}">x</span>
-              <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" data-key="${gameKey(g)}" aria-label="Gols ${g.a}" />
+              <span class="result-side">
+                <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="a" data-key="${gameKey(g)}" aria-label="Gols ${g.a}" />
+                ${isKnockout ? `<input type="number" min="0" class="penalty-box" data-game="${gIndex}" data-side="a" data-key="${gameKey(g)}" aria-label="Pênaltis ${g.a}" />` : ""}
+              </span>
             </span>
           </div>
         </th>`).join("");
@@ -1854,20 +1955,43 @@
           resultsData[k][input.dataset.side] = input.value;
           pendingKeys.add(k);
           recomputeGame(input.dataset.game);
+          // Se o jogo deixou de estar empatado, oculta os pênaltis automaticamente.
+          if (penaltyKeys.has(k) && !isGameTied(k)) hidePenalties(k);
           schedulePush();
         });
       });
 
-      // Clicar no "x" central zera o placar do jogo (somente admin)
+      // Carrega valores e liga os eventos dos campos de pênaltis (mata-mata)
+      container.querySelectorAll(".penalty-box").forEach(input => {
+        const key = input.dataset.key;
+        const pkey = input.dataset.side === "h" ? "ph" : "pa";
+        const val = resultsData[key] && resultsData[key][pkey];
+        if (val !== undefined && val !== null && val !== "") {
+          input.value = val;
+        }
+        input.addEventListener("input", () => {
+          const k = input.dataset.key;
+          if (!resultsData[k]) resultsData[k] = { h: "", a: "" };
+          resultsData[k][pkey] = input.value;
+          pendingKeys.add(k);
+          schedulePush();
+        });
+      });
+
+      // Clicar no "x" central zera o placar do jogo, inclusive pênaltis (somente admin)
       container.querySelectorAll(".result-x").forEach(x => {
         x.addEventListener("click", () => {
           if (!adminMode) return;
           const k = x.dataset.key;
-          const gIndex = x.dataset.game;
           resultsData[k] = { h: "", a: "" };
           pendingKeys.add(k);
-          container.querySelectorAll(`.result-box[data-game="${gIndex}"]`).forEach(inp => { inp.value = ""; });
-          recomputeGame(gIndex);
+          [container, stickyHead].forEach(root => {
+            if (!root) return;
+            root.querySelectorAll(`.result-box[data-key="${k}"]`).forEach(inp => { inp.value = ""; });
+            root.querySelectorAll(`.penalty-box[data-key="${k}"]`).forEach(inp => { inp.value = ""; });
+          });
+          hidePenalties(k);
+          recomputeGame(x.dataset.game);
           schedulePush();
         });
       });
@@ -1884,6 +2008,24 @@
           pendingKeys.add(k);
           applyMatchStatus(k);
           schedulePush();
+        });
+      });
+
+      // Clicar no "x" do nome do jogo mostra/oculta os boxes de pênaltis
+      // (somente admin, mata-mata e apenas se o placar estiver empatado)
+      container.querySelectorAll(".team-x").forEach(x => {
+        x.addEventListener("click", () => {
+          if (!adminMode || !isKnockout) return;
+          const k = x.dataset.key;
+          const currentlyShown = penaltyKeys.has(k);
+          // Só permite habilitar os pênaltis quando o jogo está empatado.
+          if (!currentlyShown && !isGameTied(k)) return;
+          if (currentlyShown) penaltyKeys.delete(k); else penaltyKeys.add(k);
+          const show = penaltyKeys.has(k);
+          [container, stickyHead].forEach(root => {
+            if (!root) return;
+            root.querySelectorAll(`.match-result[data-key="${k}"]`).forEach(r => r.classList.toggle("show-penalties", show));
+          });
         });
       });
 
