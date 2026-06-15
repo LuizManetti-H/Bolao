@@ -1796,10 +1796,13 @@
       updateTotals();
     }
 
-    // Soma o score de TODOS os jogos para cada participante e atualiza os boxes azuis
-    function computeParticipantTotal(pIndex) {
+    // Soma o score dos jogos para cada participante e atualiza os boxes azuis.
+    // Se 'upToDate' (YYYY-MM-DD) for informado, considera apenas os jogos até
+    // aquele dia (inclusive) — acumulando do primeiro dia até o selecionado.
+    function computeParticipantTotal(pIndex, upToDate) {
       let total = 0;
       games.forEach(g => {
+        if (upToDate && g.d > upToDate) return;
         const r = resultsData[gameKey(g)];
         if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
         const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
@@ -1811,11 +1814,13 @@
     }
 
     function updateTotals() {
+      const upToDate = dateInput.value;
       const boxes = Array.from(container.querySelectorAll(".total-box"));
-      const totals = boxes.map(box => computeParticipantTotal(parseInt(box.dataset.participant, 10)));
+      const totals = boxes.map(box => computeParticipantTotal(parseInt(box.dataset.participant, 10), upToDate));
 
-      // Há ao menos um placar lançado?
+      // Há ao menos um placar lançado até o dia selecionado?
       const hasAnyResult = games.some(g => {
+        if (upToDate && g.d > upToDate) return false;
         const r = resultsData[gameKey(g)];
         return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
       });
