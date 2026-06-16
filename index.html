@@ -912,6 +912,51 @@
       width: fit-content;
     }
 
+    .tally-outcomes {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      justify-items: center;
+      gap: 3px;
+      margin: 0 0 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #000;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #0094C8;
+    }
+
+    .tally-side {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .tally-left { justify-self: end; }
+    .tally-right { justify-self: start; }
+
+    .tally-outcome {
+      display: inline-block;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: #c2620d;
+      min-width: 0;
+      height: 20px;
+      line-height: 20px;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 0 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .tally-outcome.highlight { background: #fef9c3 !important; color: var(--text); }
+
+    .tally-sep {
+      color: var(--muted);
+    }
+
     .tally li {
       display: grid;
       grid-template-columns: auto 28px;
@@ -1594,15 +1639,37 @@
     // para o jogo. Clicar em qualquer outro lugar da tela limpa o destaque.
     function clearTallyHighlight() {
       document
-        .querySelectorAll(".tally-score.highlight, .name.highlight, .score.highlight")
+        .querySelectorAll(".tally-score.highlight, .tally-outcome.highlight, .name.highlight, .score.highlight")
         .forEach(el => el.classList.remove("highlight"));
     }
 
     document.addEventListener("click", e => {
+      const outcome = e.target.closest(".tally-outcome");
       const tally = e.target.closest(".tally-score");
-      const wasActive = tally && tally.classList.contains("highlight");
+      const wasActive = (tally || outcome) && (tally || outcome).classList.contains("highlight");
       clearTallyHighlight();
-      if (!tally || wasActive) return;
+      if (wasActive) return;
+
+      if (outcome) {
+        const gIndex = outcome.dataset.game;
+        const want = outcome.dataset.outcome; // "h" | "d" | "a"
+        outcome.classList.add("highlight");
+        container
+          .querySelectorAll(`.score[data-game="${gIndex}"]`)
+          .forEach(cell => {
+            const parsed = parseScore(cell.dataset.pred);
+            if (!parsed) return;
+            const res = parsed[0] > parsed[1] ? "h" : parsed[0] < parsed[1] ? "a" : "d";
+            if (res !== want) return;
+            cell.classList.add("highlight");
+            const p = cell.dataset.participant;
+            const nameCell = container.querySelector(`.name[data-participant="${p}"]`);
+            if (nameCell) nameCell.classList.add("highlight");
+          });
+        return;
+      }
+
+      if (!tally) return;
       const gIndex = tally.dataset.game;
       const score = tally.dataset.score;
       tally.classList.add("highlight");
@@ -1886,9 +1953,22 @@
       // Rodapé: resumo de palpites por jogo, do mais ao menos votado
       const footerCells = dayGames.map((g, gIndex) => {
         const counts = {};
+        let homeWins = 0, draws = 0, awayWins = 0;
         g.p.forEach(score => {
           counts[score] = (counts[score] || 0) + 1;
+          const parsed = parseScore(score);
+          if (parsed) {
+            if (parsed[0] > parsed[1]) homeWins++;
+            else if (parsed[0] < parsed[1]) awayWins++;
+            else draws++;
+          }
         });
+        const outcomes = `
+          <div class="tally-outcomes">
+            <span class="tally-side tally-left"><span class="tally-outcome" data-game="${gIndex}" data-outcome="h">${homeWins}</span><span class="tally-sep">-</span></span>
+            <span class="tally-outcome" data-game="${gIndex}" data-outcome="d">${draws}</span>
+            <span class="tally-side tally-right"><span class="tally-sep">-</span><span class="tally-outcome" data-game="${gIndex}" data-outcome="a">${awayWins}</span></span>
+          </div>`;
         const summary = Object.entries(counts)
           .sort((a, b) => b[1] - a[1])
           .map(([score, qty]) => `
@@ -1896,7 +1976,7 @@
               <span class="tally-score" data-game="${gIndex}" data-score="${score}">${score}</span>
               <span class="tally-qty">${qty}</span>
             </li>`).join("");
-        return `<td class="tally"><ul>${summary}</ul></td>`;
+        return `<td class="tally">${outcomes}<ul>${summary}</ul></td>`;
       }).join("");
 
       // Rótulo da fase exibido no topo da coluna de participantes
