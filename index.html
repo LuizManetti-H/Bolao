@@ -324,6 +324,86 @@
       margin-top: 20px;
     }
 
+    /* Tabela de Resultados (detalhamento por participante) */
+    .results-modal {
+      max-width: 460px;
+    }
+
+    .results-table {
+      table-layout: fixed;
+      width: auto;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .results-table thead th {
+      color: #fff;
+    }
+
+    .results-table thead th[data-sort] {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .results-table thead th.sort-active {
+      text-decoration: underline;
+    }
+
+    .results-table thead th.sort-active[data-sort-dir="asc"]::after {
+      content: " \25B2";
+      font-size: 0.6em;
+    }
+
+    .results-table thead th.sort-active[data-sort-dir="desc"]::after {
+      content: " \25BC";
+      font-size: 0.6em;
+    }
+
+    .results-table thead .res-name {
+      font-weight: 700;
+    }
+
+    .results-table .res-name {
+      width: 128px;
+      text-align: left;
+      font-weight: 600;
+      padding: 0 0 0 10px;
+    }
+
+    .results-table tbody .res-name {
+      color: var(--text);
+    }
+
+    .results-table .res-c3,
+    .results-table .res-c1,
+    .results-table .res-c0,
+    .results-table .res-neg,
+    .results-table .res-total {
+      width: 52px;
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .results-table tbody .res-c3,
+    .results-table tbody .res-c1,
+    .results-table tbody .res-c0,
+    .results-table tbody .res-neg,
+    .results-table tbody .res-total {
+      color: #000000;
+    }
+
+    .results-table tbody .res-c3 { color: #15803d; }
+    .results-table tbody .res-c1 { color: #ca8a04; }
+    .results-table tbody .res-neg { color: #b91c1c; }
+    .results-table .res-total { font-weight: 800; }
+
+    .results-table tbody tr td { background: #ffffff; }
+    .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
+
+    .results-table tbody tr td { background: #ffffff; }
+    .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
+
     header h1 {
       margin: 0;
       font-size: 2rem;
@@ -769,6 +849,7 @@
       text-transform: none;
       letter-spacing: 0;
       color: #fff;
+      cursor: pointer;
     }
 
     .name-col-box {
@@ -1099,6 +1180,25 @@
     </div>
   </div>
 
+  <div class="admin-overlay" id="resultsOverlay" hidden>
+    <div class="ranking-modal results-modal" id="resultsModal" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+      <h2 id="resultsTitle">Resultados</h2>
+      <table class="ranking-table results-table">
+        <thead>
+          <tr>
+            <th class="res-name" data-sort="name">Participante</th>
+            <th class="res-c3" data-sort="c3">+3</th>
+            <th class="res-c1" data-sort="c1">+1</th>
+            <th class="res-c0" data-sort="c0">0</th>
+            <th class="res-neg" data-sort="cNeg">−2</th>
+            <th class="res-total" data-sort="total">Σ</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <script src="data.js"></script>
   <script>
     const { participants, games } = window.BOLAO_DATA;
@@ -1281,7 +1381,7 @@
       "Bósnia e Herzegovina": ["BOS", "BOS - Bosnia.png"],
       "Brasil": ["BRA", "BRA - Brasil.png"],
       "Canadá": ["CAN", "CAN - Canada.png"],
-      "Congo (RD)": ["CDR", "CDR - Congo.png"],
+      "Congo (RD)": ["CON", "CDR - Congo.png"],
       "Costa do Marfim": ["CIV", "CIV - Costa do Marfim.png"],
       "Colômbia": ["COL", "COL - Colombia.png"],
       "Coreia do Sul": ["COR", "COR - Coreia.png"],
@@ -1630,9 +1730,88 @@
       if (e.target === rankingOverlay) closeRanking();
     });
 
+    // ---- Resultados (detalhamento de pontos por participante) ----
+    const resultsOverlay = document.getElementById("resultsOverlay");
+    const resultsBody = document.getElementById("resultsBody");
+    const resultsModal = document.getElementById("resultsModal");
+
+    // Estado de ordenação da tabela de Resultados
+    let resultsSortKey = "name";
+    let resultsSortDir = "asc";
+
+    function renderResultsRows() {
+      const rows = participants
+        .map((name, i) => ({ name, ...computeParticipantBreakdown(i) }));
+
+      const key = resultsSortKey;
+      const dir = resultsSortDir === "asc" ? 1 : -1;
+      rows.sort((a, b) => {
+        if (key === "name") {
+          return a.name.localeCompare(b.name, "pt-BR") * dir;
+        }
+        const diff = (a[key] - b[key]) * dir;
+        if (diff !== 0) return diff;
+        return a.name.localeCompare(b.name, "pt-BR");
+      });
+
+      resultsBody.innerHTML = rows.map((r) => `
+          <tr>
+            <td class="res-name">${r.name}</td>
+            <td class="res-c3">${r.c3}</td>
+            <td class="res-c1">${r.c1}</td>
+            <td class="res-c0">${r.c0}</td>
+            <td class="res-neg">${r.cNeg}</td>
+            <td class="res-total">${r.total}</td>
+          </tr>`).join("");
+
+      // Marca visualmente a coluna ordenada e a direção
+      resultsModal.querySelectorAll("thead th[data-sort]").forEach(th => {
+        th.classList.toggle("sort-active", th.dataset.sort === resultsSortKey);
+        th.dataset.sortDir = th.dataset.sort === resultsSortKey ? resultsSortDir : "";
+      });
+    }
+
+    function openResults() {
+      renderResultsRows();
+
+      resultsModal.style.transform = "none";
+      resultsOverlay.hidden = false;
+
+      requestAnimationFrame(() => {
+        const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+        resultsModal.style.maxHeight = (window.innerHeight * 0.96 / s) + "px";
+        resultsModal.style.transformOrigin = "center center";
+        resultsModal.style.transform = "scale(" + s + ")";
+      });
+    }
+
+    function closeResults() {
+      resultsOverlay.hidden = true;
+    }
+
+    resultsOverlay.addEventListener("click", e => {
+      if (e.target === resultsOverlay) closeResults();
+    });
+
+    // Clique no cabeçalho ordena pela coluna selecionada (alterna asc/desc)
+    resultsModal.querySelector("thead").addEventListener("click", e => {
+      const th = e.target.closest("th[data-sort]");
+      if (!th) return;
+      const key = th.dataset.sort;
+      if (key === resultsSortKey) {
+        resultsSortDir = resultsSortDir === "asc" ? "desc" : "asc";
+      } else {
+        resultsSortKey = key;
+        // Nome começa em ordem alfabética; colunas numéricas, do maior para o menor
+        resultsSortDir = key === "name" ? "asc" : "desc";
+      }
+      renderResultsRows();
+    });
+
     // Clique no cabeçalho "Placar Geral" abre o ranking
     container.addEventListener("click", e => {
       if (e.target.closest(".name-col-box")) openRanking();
+      else if (e.target.closest(".phase-label")) openResults();
     });
 
     // Realça o palpite clicado no rodapé, o nome do jogador e o palpite dele
@@ -1806,6 +1985,12 @@
       const cloneNameBox = stickyHead.querySelector(".name-col-box");
       if (cloneNameBox) {
         cloneNameBox.addEventListener("click", openRanking);
+      }
+
+      // Clicar na fase ("Primeira Fase", etc.) do cabeçalho flutuante abre os Resultados
+      const clonePhaseLabel = stickyHead.querySelector(".phase-label");
+      if (clonePhaseLabel) {
+        clonePhaseLabel.addEventListener("click", openResults);
       }
 
       // Mantém a rolagem horizontal do clone sincronizada com a tabela real
@@ -2186,6 +2371,27 @@
         if (pred) total += computePoints(pred, result);
       });
       return total;
+    }
+
+    // Detalha, por participante, quantos palpites renderam +3, +1, 0 e -2,
+    // além do total de pontos. Considera apenas jogos com placar lançado.
+    function computeParticipantBreakdown(pIndex) {
+      let c3 = 0, c1 = 0, c0 = 0, cNeg = 0, total = 0;
+      games.forEach(g => {
+        const r = resultsData[gameKey(g)];
+        if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
+        const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
+        if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
+        const pred = parseScore(g.p[pIndex]);
+        if (!pred) return;
+        const pts = computePoints(pred, result);
+        if (pts === 3) c3++;
+        else if (pts === 1) c1++;
+        else if (pts === -2) cNeg++;
+        else c0++;
+        total += pts;
+      });
+      return { c3, c1, c0, cNeg, total };
     }
 
     function updateTotals() {
