@@ -324,7 +324,7 @@
       margin-top: 20px;
     }
 
-    /* Tabela de Resultados (detalhamento por participante) */
+    /* Tabela de Resultados (detalhamento por jogador) */
     .results-modal {
       max-width: 460px;
     }
@@ -1185,7 +1185,7 @@
         <thead>
           <tr>
             <th class="rk-pos">#</th>
-            <th class="rk-name">Participante</th>
+            <th class="rk-name">Jogador</th>
             <th class="rk-pts">Pontos</th>
           </tr>
         </thead>
@@ -1740,7 +1740,7 @@
       if (e.target === rankingOverlay) closeRanking();
     });
 
-    // ---- Resultados (detalhamento de pontos por participante) ----
+    // ---- Resultados (detalhamento de pontos por jogador) ----
     const resultsOverlay = document.getElementById("resultsOverlay");
     const resultsBody = document.getElementById("resultsBody");
     const resultsModal = document.getElementById("resultsModal");
@@ -2125,7 +2125,7 @@
           </div>
         </th>`).join("");
 
-      // Linhas: nome do participante + palpite em cada jogo
+      // Linhas: nome do jogador + palpite em cada jogo
       const nameRows = participants.map((name, pIndex) => `
           <tr>
             <td class="name" data-participant="${pIndex}">
@@ -2173,7 +2173,7 @@
         return `<td class="tally">${outcomes}<ul>${summary}</ul></td>`;
       }).join("");
 
-      // Rótulo da fase exibido no topo da coluna de participantes
+      // Rótulo da fase exibido no topo da coluna de jogadores
       const phaseLabel =
           (selected >= "2026-06-11" && selected <= "2026-06-27") ? "Primeira Fase"
         : (selected >= "2026-06-28" && selected <= "2026-07-03") ? "Segunda Fase"
@@ -2365,7 +2365,7 @@
       updateTotals();
     }
 
-    // Soma o score dos jogos para cada participante e atualiza os boxes azuis.
+    // Soma o score dos jogos para cada jogador e atualiza os boxes azuis.
     // Se 'upToDate' (YYYY-MM-DD) for informado, considera apenas os jogos até
     // aquele dia (inclusive) — acumulando do primeiro dia até o selecionado.
     function computeParticipantTotal(pIndex, upToDate) {
@@ -2382,7 +2382,7 @@
       return total;
     }
 
-    // Detalha, por participante, quantos palpites renderam +3, +1, 0 e -2,
+    // Detalha, por jogador, quantos palpites renderam +3, +1, 0 e -2,
     // além do total de pontos. Considera apenas jogos com placar lançado.
     function computeParticipantBreakdown(pIndex) {
       let c3 = 0, c1 = 0, c0 = 0, cNeg = 0, total = 0;
