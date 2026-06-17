@@ -344,20 +344,33 @@
     .results-table thead th[data-sort] {
       cursor: pointer;
       user-select: none;
+      position: relative;
     }
 
     .results-table thead th.sort-active {
-      text-decoration: underline;
+      text-decoration: none;
     }
 
     .results-table thead th.sort-active[data-sort-dir="asc"]::after {
-      content: " \25B2";
+      content: "\25B2";
       font-size: 0.6em;
+      position: absolute;
+      right: 2px;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
     }
 
     .results-table thead th.sort-active[data-sort-dir="desc"]::after {
-      content: " \25BC";
+      content: "\25BC";
       font-size: 0.6em;
+      position: absolute;
+      right: 2px;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
     }
 
     .results-table thead .res-name {
