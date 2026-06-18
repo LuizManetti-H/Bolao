@@ -474,6 +474,14 @@
       box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
+    .intro-placar-btn.active {
+      background: var(--header-grad-1);
+    }
+
+    .intro-placar-btn.active:hover {
+      background: var(--header-grad-1);
+    }
+
     main {
       max-width: 1100px;
       margin: 0 auto;
@@ -1170,24 +1178,29 @@
     <button type="button" class="intro-placar-btn" id="introPlacarBtn">Placar Geral</button>
   </section>
 
-  <div class="match-date">
-    <div class="date-picker">
-      <button type="button" class="date-button" id="dateButton"></button>
-      <input
-        type="date"
-        id="matchDate"
-        value="2026-06-11"
-        min="2026-06-11"
-        max="2026-07-19"
-      />
+  <div class="tab-view" id="viewJogos">
+    <div class="match-date">
+      <div class="date-picker">
+        <button type="button" class="date-button" id="dateButton"></button>
+        <input
+          type="date"
+          id="matchDate"
+          value="2026-06-11"
+          min="2026-06-11"
+          max="2026-07-19"
+        />
+      </div>
+      <span class="save-status" id="saveStatus"></span>
     </div>
-    <span class="save-status" id="saveStatus"></span>
+
+    <main>
+      <div class="matches-grid" id="matches"></div>
+      <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
+    </main>
   </div>
 
-  <main>
-    <div class="matches-grid" id="matches"></div>
-    <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
-  </main>
+  <div class="tab-view" id="viewClassificados" hidden></div>
+  <div class="tab-view" id="viewFinalistas" hidden></div>
 
   <footer>Bolão · Copa do Mundo FIFA 2026 · v2.0</footer>
   </div>
@@ -1899,6 +1912,27 @@
     if (introPlacarBtn) {
       introPlacarBtn.addEventListener("click", openRanking);
     }
+
+    // Abas "Jogos" / "Classificados" / "Finalistas": alternam o conteúdo
+    // exibido abaixo do box de introdução.
+    const tabButtons = [
+      { btn: document.getElementById("introJogosBtn"), view: "viewJogos" },
+      { btn: document.getElementById("introClassificadosBtn"), view: "viewClassificados" },
+      { btn: document.getElementById("introFinalistasBtn"), view: "viewFinalistas" },
+    ];
+    function selectTab(viewId) {
+      tabButtons.forEach(t => {
+        if (!t.btn) return;
+        const isActive = t.view === viewId;
+        t.btn.classList.toggle("active", isActive);
+        const view = document.getElementById(t.view);
+        if (view) view.hidden = !isActive;
+      });
+    }
+    tabButtons.forEach(t => {
+      if (t.btn) t.btn.addEventListener("click", () => selectTab(t.view));
+    });
+    selectTab("viewJogos");
 
     // Realça o palpite clicado no rodapé, o nome do jogador e o palpite dele
     // para o jogo. Clicar em qualquer outro lugar da tela limpa o destaque.
