@@ -436,7 +436,7 @@
       margin: -18px auto 0;
       background: var(--card);
       border-radius: 14px;
-      height: 60px;
+      height: 50px;
       padding: 0 26px;
       display: flex;
       align-items: center;
@@ -451,8 +451,12 @@
       font-weight: 700;
       font-size: 0.9rem;
       color: #fff;
-      padding: 10px 22px;
+      height: 30px;
+      padding: 0 22px;
       min-width: 125px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border: none;
       border-radius: 8px;
       background: var(--accent);
@@ -1138,10 +1142,9 @@
       }
 
       .intro-placar-btn {
-        flex: 0 0 21vw;
-        width: 21vw;
+        flex: 1 1 0;
         min-width: 0;
-        padding: 10px 0;
+        padding: 0 4px;
         font-size: 0.72rem;
       }
     }
@@ -1260,6 +1263,40 @@
     const SCALE_STEP = 0.1;
     let pageScale = parseFloat(localStorage.getItem("bolaoScale")) || 1;
 
+    // Ajusta o tamanho da fonte dos botões da intro para que o texto preencha
+    // a maior parte do botão e nunca ultrapasse a largura/altura dele, em
+    // qualquer nível de zoom. Usa um font-size único (baseado no rótulo mais
+    // largo e no botão mais estreito) para manter os 4 botões uniformes.
+    const introFitButtons = Array.from(document.querySelectorAll(".intro-placar-btn"));
+    const introFitContainer = document.querySelector(".intro");
+    const introFitCanvas = document.createElement("canvas");
+    const introFitCtx = introFitCanvas.getContext("2d");
+    function fitIntroButtons() {
+      if (!introFitButtons.length || !introFitContainer) return;
+      const cs = getComputedStyle(introFitButtons[0]);
+      introFitCtx.font = cs.fontWeight + " 100px " + cs.fontFamily;
+      const padTop = parseFloat(cs.paddingTop);
+      const padBottom = parseFloat(cs.paddingBottom);
+      let minAvailW = Infinity;
+      let maxTextW = 0;
+      introFitButtons.forEach(btn => {
+        const s = getComputedStyle(btn);
+        const availW = btn.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+        if (availW < minAvailW) minAvailW = availW;
+        const tw = introFitCtx.measureText(btn.textContent.trim()).width;
+        if (tw > maxTextW) maxTextW = tw;
+      });
+      if (maxTextW <= 0 || !isFinite(minAvailW)) return;
+      const WIDTH_FILL = 0.88;   // o texto ocupa ~88% da largura do botão
+      const HEIGHT_FILL = 0.80;  // limite pela altura para não estourar verticalmente
+      const btnH = introFitButtons[0].clientHeight;
+      const availH = btnH - padTop - padBottom;
+      const fsByWidth = (minAvailW * WIDTH_FILL) / (maxTextW / 100);
+      const fsByHeight = availH * HEIGHT_FILL;
+      const fs = Math.max(8, Math.min(fsByWidth, fsByHeight));
+      introFitButtons.forEach(btn => { btn.style.fontSize = fs + "px"; });
+    }
+
     function applyScale() {
       pageScale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(pageScale * 100) / 100));
       zoomWrap.style.transformOrigin = "top left";
@@ -1291,6 +1328,7 @@
         document.body.style.height = (zoomWrap.offsetHeight * pageScale) + "px";
         if (typeof updateStickyGeometry === "function") updateStickyGeometry();
         if (typeof updateStickyHeader === "function") updateStickyHeader();
+        fitIntroButtons();
       });
     }
 
@@ -1302,6 +1340,8 @@
       pageScale += SCALE_STEP;
       applyScale();
     });
+
+    window.addEventListener("resize", fitIntroButtons);
 
     const weekdays = [
       "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
