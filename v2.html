@@ -452,6 +452,7 @@
       font-size: 0.9rem;
       color: #fff;
       padding: 10px 22px;
+      min-width: 140px;
       border: none;
       border-radius: 8px;
       background: var(--accent);
@@ -1147,10 +1148,10 @@
   </header>
 
   <section class="intro">
-    <button type="button" class="intro-placar-btn" id="introPlacarBtn">Placar Geral</button>
-    <button type="button" class="intro-placar-btn" id="introResultadosBtn">Resultados</button>
+    <button type="button" class="intro-placar-btn" id="introJogosBtn">Jogos</button>
     <button type="button" class="intro-placar-btn" id="introClassificadosBtn">Classificados</button>
     <button type="button" class="intro-placar-btn" id="introFinalistasBtn">Finalistas</button>
+    <button type="button" class="intro-placar-btn" id="introPlacarBtn">Placar Geral</button>
   </section>
 
   <div class="match-date">
@@ -1844,12 +1845,6 @@
     const introPlacarBtn = document.getElementById("introPlacarBtn");
     if (introPlacarBtn) {
       introPlacarBtn.addEventListener("click", openRanking);
-    }
-
-    // Botão "Resultados" da seção de introdução abre os Resultados
-    const introResultadosBtn = document.getElementById("introResultadosBtn");
-    if (introResultadosBtn) {
-      introResultadosBtn.addEventListener("click", openResults);
     }
 
     // Realça o palpite clicado no rodapé, o nome do jogador e o palpite dele
