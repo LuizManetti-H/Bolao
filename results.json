@@ -137,5 +137,7 @@
     "a": "0",
     "status": "live"
   },
-  "__finalTeams": {}
+  "__finalTeams": {
+    "Campeão": "Brasil"
+  }
 }
