@@ -515,6 +515,21 @@
       font-weight: 600;
       position: relative;
     }
+    .fin-table .fin-cell .fin-pick {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .fin-table .fin-cell .fin-flag:empty {
+      display: none;
+    }
+    .fin-table .fin-cell .fin-flag img {
+      height: 16px;
+      width: auto;
+      display: block;
+      border-radius: 2px;
+    }
     .fin-table .fin-cell--brasil {
       color: var(--accent);
       font-weight: 700;
@@ -2097,13 +2112,22 @@
         if (!span) return;
         const col = cell.dataset.col;
         const real = (actual[col] || "").trim().toLowerCase();
-        const pick = ((finalistsData[col] && finalistsData[col][parseInt(cell.dataset.participant, 10)]) || "").trim().toLowerCase();
+        const pickName = (finalistsData[col] && finalistsData[col][parseInt(cell.dataset.participant, 10)]) || "";
+        const pick = pickName.trim().toLowerCase();
+        const flagSlot = cell.querySelector(".fin-flag");
         if (real && pick && real === pick) {
           span.textContent = "+" + (FIN_POINTS[col] || 0);
           span.className = "pts pts-pos";
+          const info = TEAM_INFO[pickName];
+          if (flagSlot) {
+            flagSlot.innerHTML = info
+              ? `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${pickName}">`
+              : "";
+          }
         } else {
           span.innerHTML = "&nbsp;";
           span.className = "pts pts-hidden";
+          if (flagSlot) flagSlot.innerHTML = "";
         }
       });
     }
@@ -2132,7 +2156,7 @@
       const bodyRows = participants.map((name, pIndex) => {
         return `<tr>${cols.map(col => {
           const val = (finalists[col] && finalists[col][pIndex]) || "";
-          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}">${val}<span class="pts pts-hidden">&nbsp;</span></td>`;
+          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}"><span class="fin-pick"><span class="fin-flag"></span><span class="fin-name">${val}</span></span><span class="pts pts-hidden">&nbsp;</span></td>`;
         }).join("")}</tr>`;
       }).join("");
       view.innerHTML = `
