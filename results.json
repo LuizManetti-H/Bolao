@@ -137,12 +137,7 @@
     "a": "1",
     "status": "finished"
   },
-  "__finalTeams": {
-    "Campeão": "Brasil",
-    "Vice-campeão": "Portugal",
-    "3º Lugar": "Argentina",
-    "4º Lugar": "Alemanha"
-  },
+  "__finalTeams": {},
   "2026-06-18|Canadá|Catar": {
     "h": "2",
     "a": "0",
