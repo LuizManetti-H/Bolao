@@ -1796,15 +1796,21 @@
       return false;
     }
 
+    let savedHideTimer = null;
     function setSaveStatus(state) {
       const els = document.querySelectorAll(".save-status");
       if (!els.length) return;
       const map = { saving: "Salvando…", saved: "Salvo ✓", error: "Erro ao salvar" };
+      if (savedHideTimer) { clearTimeout(savedHideTimer); savedHideTimer = null; }
       els.forEach(el => {
         if (!adminMode || !state) { el.textContent = ""; el.className = "save-status"; return; }
         el.textContent = map[state] || "";
         el.className = "save-status " + state;
       });
+      // A confirmação "Salvo ✓" some sozinha após 5 segundos.
+      if (adminMode && state === "saved") {
+        savedHideTimer = setTimeout(() => { setSaveStatus(""); }, 5000);
+      }
     }
 
     function updateResultBoxesEditable() {
