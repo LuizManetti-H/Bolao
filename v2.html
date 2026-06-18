@@ -847,6 +847,15 @@
     .save-status.saved { color: #15803d; }
     .save-status.error { color: #b91c1c; }
 
+    .fin-status-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      min-height: 1.2rem;
+      margin-bottom: 6px;
+    }
+    .fin-status-bar .save-status { margin-left: 0; }
+
     .date-button {
       font: inherit;
       font-weight: 600;
@@ -1788,11 +1797,14 @@
     }
 
     function setSaveStatus(state) {
-      if (!saveStatus) return;
-      if (!adminMode || !state) { saveStatus.textContent = ""; saveStatus.className = "save-status"; return; }
+      const els = document.querySelectorAll(".save-status");
+      if (!els.length) return;
       const map = { saving: "Salvando…", saved: "Salvo ✓", error: "Erro ao salvar" };
-      saveStatus.textContent = map[state] || "";
-      saveStatus.className = "save-status " + state;
+      els.forEach(el => {
+        if (!adminMode || !state) { el.textContent = ""; el.className = "save-status"; return; }
+        el.textContent = map[state] || "";
+        el.className = "save-status " + state;
+      });
     }
 
     function updateResultBoxesEditable() {
@@ -2186,6 +2198,7 @@
       }).join("");
       view.innerHTML = `
         <div class="tab-main">
+          <div class="fin-status-bar"><span class="save-status" id="saveStatusFin"></span></div>
           <div class="matches-grid">
             <div class="board">
               <table class="name-table">
