@@ -566,6 +566,8 @@
     .fin-table thead th .fin-team-input:disabled {
       background: rgba(255, 255, 255, 0.12);
       color: #fff;
+      -webkit-text-fill-color: #fff;
+      opacity: 1;
       border-color: rgba(255, 255, 255, 0.25);
       cursor: default;
     }
@@ -2054,11 +2056,27 @@
 
     // Pontuação dos Finalistas por coluna e placar geral de cada jogador.
     const FIN_POINTS = { "Campeão": 20, "Vice-campeão": 15, "3º Lugar": 10, "4º Lugar": 10 };
+    // Os times finalistas (Campeão, Vice, 3º, 4º) são gravados no mesmo
+    // results.json do GitHub, sob esta chave reservada (não colide com jogos).
+    const FINALS_KEY = "__finalTeams";
     let finalistsData = {};
     let finalCols = [];
+    // Times finalistas publicados no GitHub (dentro de resultsData).
+    function getFinalTeamsStore() {
+      const v = resultsData[FINALS_KEY];
+      return (v && typeof v === "object") ? v : {};
+    }
+    // Reflete nos campos da coluna os times vindos do GitHub, sem sobrescrever
+    // o campo que o Admin estiver editando no momento.
+    function applyFinalTeamsToInputs() {
+      const store = getFinalTeamsStore();
+      document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => {
+        if (i === document.activeElement) return;
+        i.value = store[i.dataset.col] || "";
+      });
+    }
     function getFinalActualTeams() {
-      let saved = {};
-      try { saved = JSON.parse(localStorage.getItem("bolaoFinalTeams")) || {}; } catch { saved = {}; }
+      const saved = { ...getFinalTeamsStore() };
       document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => {
         saved[i.dataset.col] = i.value;
       });
@@ -2110,6 +2128,8 @@
     function updateFinalistasTotals() {
       const view = document.getElementById("viewFinalistas");
       if (!view) return;
+      // Sincroniza os campos da coluna com os times publicados no GitHub.
+      applyFinalTeamsToInputs();
       paintTotals(Array.from(view.querySelectorAll(".total-box")), dateInput.value);
       // Selo de pontos (+20 / +15 / +10) em cada palpite certo.
       const actual = getFinalActualTeams();
@@ -2152,8 +2172,7 @@
       finalCols = cols;
       const nameRows = participants.map((name, pIndex) =>
         `<tr><td class="name" data-participant="${pIndex}"><span class="name-label">${name}</span><span class="total-box" data-participant="${pIndex}">0</span></td></tr>`).join("");
-      let savedFinalTeams = {};
-      try { savedFinalTeams = JSON.parse(localStorage.getItem("bolaoFinalTeams")) || {}; } catch { savedFinalTeams = {}; }
+      const savedFinalTeams = getFinalTeamsStore();
       const headerCells = cols.map(c => {
         const val = (savedFinalTeams[c] || "").replace(/"/g, "&quot;");
         return `<th><div class="fin-head"><span class="fin-head-title">${c}</span>` +
@@ -2190,16 +2209,19 @@
     renderFinalistas();
     window.addEventListener("resize", syncFinalistasHeader);
 
-    // Salva o nome do time de cada coluna (Campeão, Vice, 3º, 4º) digitado pelo Admin.
+    // Salva o nome do time de cada coluna (Campeão, Vice, 3º, 4º) digitado pelo
+    // Admin, gravando no GitHub junto dos placares dos jogos.
     document.getElementById("viewFinalistas").addEventListener("input", e => {
       const input = e.target.closest(".fin-team-input");
       if (!input) return;
-      let saved = {};
-      try { saved = JSON.parse(localStorage.getItem("bolaoFinalTeams")) || {}; } catch { saved = {}; }
-      saved[input.dataset.col] = input.value;
-      localStorage.setItem("bolaoFinalTeams", JSON.stringify(saved));
+      if (!resultsData[FINALS_KEY] || typeof resultsData[FINALS_KEY] !== "object") {
+        resultsData[FINALS_KEY] = {};
+      }
+      resultsData[FINALS_KEY][input.dataset.col] = input.value;
+      pendingKeys.add(FINALS_KEY);
       // Placar Geral único: atualiza tanto Finalistas quanto Jogos.
       updateTotals();
+      schedulePush();
     });
     updateFinalistasTotals();
 
@@ -2208,8 +2230,10 @@
       if (!adminMode) return;
       if (!e.target.closest(".phase-label--static")) return;
       document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => { i.value = ""; });
-      localStorage.removeItem("bolaoFinalTeams");
+      resultsData[FINALS_KEY] = {};
+      pendingKeys.add(FINALS_KEY);
       updateTotals();
+      schedulePush();
     });
 
     selectTab("viewJogos");
@@ -2468,6 +2492,7 @@
         container.innerHTML = "";
         noMatches.hidden = false;
         teardownStickyHeader();
+        updateFinalistasTotals();
         return;
       }
       noMatches.hidden = true;
