@@ -488,6 +488,75 @@
       padding: 24px 24px 16px;
     }
 
+    /* Wrapper das abas "Classificados" / "Finalistas" (mesmo recuo do main) */
+    .tab-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 24px 16px;
+    }
+
+    /* Rótulo "Finalistas" no topo da coluna de jogadores: não é clicável */
+    .phase-label.phase-label--static {
+      cursor: default;
+    }
+    .phase-label.phase-label--static.clickable {
+      cursor: pointer;
+    }
+
+    /* Cabeçalhos das colunas da Finalistas no mesmo tamanho de "Finalistas" */
+    .fin-table thead th {
+      font-size: 1rem;
+      width: 170px;
+    }
+
+    /* Células de palpite da Finalistas (Campeão, Vice, 3º, 4º) */
+    .fin-table .fin-cell {
+      text-align: center;
+      font-weight: 600;
+      position: relative;
+    }
+    .fin-table .fin-cell--brasil {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .fin-table thead th .fin-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .fin-table thead th .fin-team-input {
+      width: 100%;
+      box-sizing: border-box;
+      font: inherit;
+      font-size: 19px;
+      font-weight: 600;
+      text-align: center;
+      color: #0f172a;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 6px;
+    }
+    .fin-table thead th .fin-team-input::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    .fin-table thead th .fin-team-input:disabled {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+      cursor: default;
+    }
+    .fin-table thead th .fin-team-input:disabled::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .fin-table thead th .fin-team-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+
     .matches-grid {
       background: var(--card);
       border-radius: 14px;
@@ -1139,6 +1208,11 @@
         padding-right: 0;
       }
 
+      .tab-main {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
       .match-date {
         padding-left: 5px;
         padding-right: 5px;
@@ -1429,6 +1503,8 @@
       adminButton.classList.toggle("active", on);
       container.classList.toggle("admin-mode", on);
       updateResultBoxesEditable();
+      document.querySelectorAll(".fin-team-input").forEach(i => { i.disabled = !on; });
+      document.querySelectorAll("#viewFinalistas .phase-label--static").forEach(el => el.classList.toggle("clickable", on));
       setSaveStatus("");
       if (container.querySelector(".board")) setupStickyHeader();
     }
@@ -1783,7 +1859,7 @@
 
     function openRanking() {
       const rows = participants
-        .map((name, i) => ({ name, pts: computeParticipantTotal(i) }))
+        .map((name, i) => ({ name, pts: computeParticipantGrandTotal(i, dateInput.value) }))
         .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, "pt-BR"));
 
       let lastPts = null;
@@ -1928,10 +2004,184 @@
         const view = document.getElementById(t.view);
         if (view) view.hidden = !isActive;
       });
+      if (viewId === "viewFinalistas") requestAnimationFrame(syncFinalistasHeader);
+      if (viewId === "viewFinalistas") updateFinalistasTotals();
     }
     tabButtons.forEach(t => {
       if (t.btn) t.btn.addEventListener("click", () => selectTab(t.view));
     });
+
+    // Iguala a altura dos cabeçalhos da coluna de nomes e das colunas de palpite.
+    function syncFinalistasHeader() {
+      const view = document.getElementById("viewFinalistas");
+      if (!view || view.hidden) return;
+      const nameHead = view.querySelector(".name-table thead th");
+      const gamesThs = view.querySelectorAll(".games-table thead th");
+      const gamesHeadRow = view.querySelector(".games-table thead tr");
+      if (!nameHead || !gamesThs.length || !gamesHeadRow) return;
+      const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+      // Zera para medir as alturas naturais de cada cabeçalho.
+      nameHead.style.height = "auto";
+      gamesThs.forEach(th => { th.style.height = "auto"; });
+      const nameH = nameHead.getBoundingClientRect().height / s;
+      const gamesH = gamesHeadRow.getBoundingClientRect().height / s;
+      // Aplica a maior altura aos dois lados para que fiquem iguais.
+      const maxH = Math.max(nameH, gamesH);
+      nameHead.style.height = maxH + "px";
+      gamesThs.forEach(th => { th.style.height = maxH + "px"; });
+    }
+
+    // Pontuação dos Finalistas por coluna e placar geral de cada jogador.
+    const FIN_POINTS = { "Campeão": 20, "Vice-campeão": 15, "3º Lugar": 10, "4º Lugar": 10 };
+    let finalistsData = {};
+    let finalCols = [];
+    function getFinalActualTeams() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem("bolaoFinalTeams")) || {}; } catch { saved = {}; }
+      document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => {
+        saved[i.dataset.col] = i.value;
+      });
+      return saved;
+    }
+    function computeFinalistaTotal(pIndex, actual) {
+      let total = 0;
+      finalCols.forEach(col => {
+        const real = (actual[col] || "").trim().toLowerCase();
+        if (!real) return;
+        const pick = ((finalistsData[col] && finalistsData[col][pIndex]) || "").trim().toLowerCase();
+        if (pick && pick === real) total += FIN_POINTS[col] || 0;
+      });
+      return total;
+    }
+    // Placar Geral único do jogador: pontos dos Jogos + pontos dos Finalistas.
+    function computeParticipantGrandTotal(pIndex, upToDate) {
+      return computeParticipantTotal(pIndex, upToDate) + computeFinalistaTotal(pIndex, getFinalActualTeams());
+    }
+    // Há ao menos um resultado lançado (placar de jogo ou time finalista definido)?
+    function hasAnyResultOverall(upToDate) {
+      const gamesHas = games.some(g => {
+        if (upToDate && g.d > upToDate) return false;
+        const r = resultsData[gameKey(g)];
+        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+      });
+      const actual = getFinalActualTeams();
+      const finHas = finalCols.some(col => (actual[col] || "").trim() !== "");
+      return gamesHas || finHas;
+    }
+    // Preenche um conjunto de total-box com o Placar Geral e as cores de ranking.
+    function paintTotals(boxes, upToDate) {
+      const totals = boxes.map(box => computeParticipantGrandTotal(parseInt(box.dataset.participant, 10), upToDate));
+      const hasAnyResult = hasAnyResultOverall(upToDate);
+      const distinct = [...new Set(totals)].sort((a, b) => b - a);
+      const first = distinct[0], second = distinct[1], third = distinct[2];
+      boxes.forEach((box, i) => {
+        const total = totals[i];
+        box.textContent = total;
+        let rank = "rank-none";
+        if (hasAnyResult) {
+          if (total === first) rank = "rank-1";
+          else if (total === second) rank = "rank-2";
+          else if (total === third) rank = "rank-3";
+        }
+        box.className = "total-box " + rank;
+      });
+    }
+    function updateFinalistasTotals() {
+      const view = document.getElementById("viewFinalistas");
+      if (!view) return;
+      paintTotals(Array.from(view.querySelectorAll(".total-box")), dateInput.value);
+      // Selo de pontos (+20 / +15 / +10) em cada palpite certo.
+      const actual = getFinalActualTeams();
+      view.querySelectorAll(".fin-cell").forEach(cell => {
+        const span = cell.querySelector(".pts");
+        if (!span) return;
+        const col = cell.dataset.col;
+        const real = (actual[col] || "").trim().toLowerCase();
+        const pick = ((finalistsData[col] && finalistsData[col][parseInt(cell.dataset.participant, 10)]) || "").trim().toLowerCase();
+        if (real && pick && real === pick) {
+          span.textContent = "+" + (FIN_POINTS[col] || 0);
+          span.className = "pts pts-pos";
+        } else {
+          span.innerHTML = "&nbsp;";
+          span.className = "pts pts-hidden";
+        }
+      });
+    }
+    function renderFinalistas() {
+      const view = document.getElementById("viewFinalistas");
+      if (!view) return;
+      const cols = ["Campeão", "Vice-campeão", "3º Lugar", "4º Lugar"];
+      // extraídos de "Classificados-Finalistas.csv".
+      const finalists = {
+        "Campeão": ["Espanha","Portugal","França","Brasil","Espanha","Portugal","França","Brasil","Brasil","Espanha","Espanha","Portugal","Espanha","Brasil","Espanha","França","Brasil","Brasil","Brasil","Portugal","França","Brasil"],
+        "Vice-campeão": ["Brasil","Espanha","Portugal","França","Argentina","França","Argentina","Espanha","Espanha","Brasil","Brasil","França","Portugal","Espanha","Brasil","Brasil","França","França","França","França","Argentina","França"],
+        "3º Lugar": ["França","Brasil","Espanha","Argentina","França","Inglaterra","Brasil","Portugal","França","França","Portugal","Espanha","França","França","França","Espanha","Portugal","Espanha","Espanha","Brasil","Inglaterra","Portugal"],
+        "4º Lugar": ["Portugal","Alemanha","Brasil","Portugal","México","Brasil","Espanha","Noruega","Portugal","Colômbia","França","Brasil","Brasil","Argentina","Portugal","Argentina","Espanha","Portugal","Argentina","Espanha","Espanha","Espanha"],
+      };
+      finalistsData = finalists;
+      finalCols = cols;
+      const nameRows = participants.map((name, pIndex) =>
+        `<tr><td class="name" data-participant="${pIndex}"><span class="name-label">${name}</span><span class="total-box" data-participant="${pIndex}">0</span></td></tr>`).join("");
+      let savedFinalTeams = {};
+      try { savedFinalTeams = JSON.parse(localStorage.getItem("bolaoFinalTeams")) || {}; } catch { savedFinalTeams = {}; }
+      const headerCells = cols.map(c => {
+        const val = (savedFinalTeams[c] || "").replace(/"/g, "&quot;");
+        return `<th><div class="fin-head"><span class="fin-head-title">${c}</span>` +
+          `<input type="text" class="fin-team-input" data-col="${c}" value="${val}" placeholder="Time" ${adminMode ? "" : "disabled"}></div></th>`;
+      }).join("");
+      const bodyRows = participants.map((name, pIndex) => {
+        return `<tr>${cols.map(col => {
+          const val = (finalists[col] && finalists[col][pIndex]) || "";
+          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}">${val}<span class="pts pts-hidden">&nbsp;</span></td>`;
+        }).join("")}</tr>`;
+      }).join("");
+      view.innerHTML = `
+        <div class="tab-main">
+          <div class="matches-grid">
+            <div class="board">
+              <table class="name-table">
+                <thead>
+                  <tr>
+                    <th class="name-col"><div class="name-col-inner"><span class="phase-label phase-label--static">Finalistas</span></div></th>
+                  </tr>
+                </thead>
+                <tbody>${nameRows}</tbody>
+              </table>
+              <div class="scroll-area">
+                <table class="games-table fin-table">
+                  <thead><tr>${headerCells}</tr></thead>
+                  <tbody>${bodyRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    renderFinalistas();
+    window.addEventListener("resize", syncFinalistasHeader);
+
+    // Salva o nome do time de cada coluna (Campeão, Vice, 3º, 4º) digitado pelo Admin.
+    document.getElementById("viewFinalistas").addEventListener("input", e => {
+      const input = e.target.closest(".fin-team-input");
+      if (!input) return;
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem("bolaoFinalTeams")) || {}; } catch { saved = {}; }
+      saved[input.dataset.col] = input.value;
+      localStorage.setItem("bolaoFinalTeams", JSON.stringify(saved));
+      // Placar Geral único: atualiza tanto Finalistas quanto Jogos.
+      updateTotals();
+    });
+    updateFinalistasTotals();
+
+    // Em modo Admin, clicar no rótulo "Finalistas" limpa os times digitados.
+    document.getElementById("viewFinalistas").addEventListener("click", e => {
+      if (!adminMode) return;
+      if (!e.target.closest(".phase-label--static")) return;
+      document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => { i.value = ""; });
+      localStorage.removeItem("bolaoFinalTeams");
+      updateTotals();
+    });
+
     selectTab("viewJogos");
 
     // Realça o palpite clicado no rodapé, o nome do jogador e o palpite dele
@@ -2516,33 +2766,9 @@
 
     function updateTotals() {
       const upToDate = dateInput.value;
-      const boxes = Array.from(container.querySelectorAll(".total-box"));
-      const totals = boxes.map(box => computeParticipantTotal(parseInt(box.dataset.participant, 10), upToDate));
-
-      // Há ao menos um placar lançado até o dia selecionado?
-      const hasAnyResult = games.some(g => {
-        if (upToDate && g.d > upToDate) return false;
-        const r = resultsData[gameKey(g)];
-        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
-      });
-
-      // Três maiores pontuações distintas
-      const distinct = [...new Set(totals)].sort((a, b) => b - a);
-      const first = distinct[0];
-      const second = distinct[1];
-      const third = distinct[2];
-
-      boxes.forEach((box, i) => {
-        const total = totals[i];
-        box.textContent = total;
-        let rank = "rank-none";
-        if (hasAnyResult) {
-          if (total === first) rank = "rank-1";
-          else if (total === second) rank = "rank-2";
-          else if (total === third) rank = "rank-3";
-        }
-        box.className = "total-box " + rank;
-      });
+      paintTotals(Array.from(container.querySelectorAll(".total-box")), upToDate);
+      // O Placar Geral é único: mantém os boxes da aba Finalistas em sincronia.
+      updateFinalistasTotals();
     }
 
     dateInput.addEventListener("change", () => {
