@@ -1215,6 +1215,8 @@
     tbody tr:nth-child(even) .name { background: #f1f3f5; }
     tbody tr:hover td,
     tbody tr:hover .name { background: var(--accent-soft); }
+    /* Realce da linha inteira (nome + palpites), mesmo em tabelas separadas. */
+    td.row-hl { background: var(--accent-soft) !important; }
 
     .name {
       font-weight: 600;
@@ -3406,6 +3408,37 @@
       updateClassStickyGeometry();
       updateClassSticky();
     });
+
+    // Realça a linha inteira (nome do jogador + seus palpites) ao passar/clicar,
+    // sincronizando a coluna de nomes e a de palpites (tabelas separadas).
+    (function setupRowHighlight() {
+      let curBoard = null, curIdx = null;
+      function setHl(board, idx, on) {
+        if (!board || idx == null) return;
+        board.querySelectorAll(`td[data-participant="${idx}"]`)
+          .forEach(td => td.classList.toggle("row-hl", on));
+      }
+      function clearHl() {
+        if (curBoard) setHl(curBoard, curIdx, false);
+        curBoard = null; curIdx = null;
+      }
+      document.addEventListener("mouseover", e => {
+        const cell = e.target.closest("td[data-participant]");
+        const board = cell && cell.closest(".board");
+        if (!cell || !board) return;
+        const idx = cell.dataset.participant;
+        if (board === curBoard && idx === curIdx) return;
+        clearHl();
+        curBoard = board; curIdx = idx;
+        setHl(board, idx, true);
+      });
+      document.addEventListener("mouseout", e => {
+        const to = e.relatedTarget && e.relatedTarget.closest
+          ? e.relatedTarget.closest("td[data-participant]") : null;
+        if (to && to.dataset.participant === curIdx && to.closest(".board") === curBoard) return;
+        clearHl();
+      });
+    })();
 
     function render() {
       const selected = dateInput.value;
