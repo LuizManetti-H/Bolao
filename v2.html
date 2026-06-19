@@ -1255,6 +1255,12 @@
       font-size: 0.80rem;
     }
 
+    .score .pred .pred-pen {
+      font-size: 0.78rem;
+      color: #ea7317;
+      margin: 0 4px;
+    }
+
     .pts {
       display: inline-block;
       min-width: 24px;
@@ -1272,6 +1278,7 @@
     .pts-pos { background: #dcfce7; color: #15803d; }
     .pts-one { background: #fef9c3; color: #a16207; }
     .pts-neg { background: #fee2e2; color: #b91c1c; }
+    .pts-pen { background: #2563eb; color: #ffffff; }
     .pts-zero { background: #f1f5f9; color: #64748b; }
     .pts-hidden { background: transparent; }
 
@@ -2936,8 +2943,11 @@
       const score = tally.dataset.score;
       tally.classList.add("highlight");
       container
-        .querySelectorAll(`.score[data-game="${gIndex}"][data-pred="${score}"]`)
+        .querySelectorAll(`.score[data-game="${gIndex}"]`)
         .forEach(cell => {
+          const parsed = parseScore(cell.dataset.pred);
+          const baseScore = parsed ? `${parsed[0]} x ${parsed[1]}` : cell.dataset.pred;
+          if (baseScore !== score) return;
           cell.classList.add("highlight");
           const p = cell.dataset.participant;
           const nameCell = container.querySelector(`.name[data-participant="${p}"]`);
@@ -3511,7 +3521,7 @@
       const scoreRows = participants.map((name, pIndex) => {
         const cells = dayGames.map((g, gIndex) =>
           `<td class="score" data-game="${gIndex}" data-participant="${pIndex}" data-pred="${g.p[pIndex]}">
-            <span class="pred">${g.p[pIndex].replace(/x/i, '<span class="pred-x">x</span>')}</span>
+            <span class="pred">${formatPrediction(g.p[pIndex])}</span>
             <span class="pts" data-game="${gIndex}" data-pred="${g.p[pIndex]}"></span>
           </td>`
         ).join("");
@@ -3523,8 +3533,9 @@
         const counts = {};
         let homeWins = 0, draws = 0, awayWins = 0;
         g.p.forEach(score => {
-          counts[score] = (counts[score] || 0) + 1;
           const parsed = parseScore(score);
+          const baseScore = parsed ? `${parsed[0]} x ${parsed[1]}` : score;
+          counts[baseScore] = (counts[baseScore] || 0) + 1;
           if (parsed) {
             if (parsed[0] > parsed[1]) homeWins++;
             else if (parsed[0] < parsed[1]) awayWins++;
@@ -3622,6 +3633,7 @@
           if (!resultsData[k]) resultsData[k] = { h: "", a: "" };
           resultsData[k][pkey] = input.value;
           pendingKeys.add(k);
+          recomputeGame(input.dataset.game);
           schedulePush();
         });
       });
@@ -3688,14 +3700,28 @@
       });
     }
 
-    // Converte "2 x 1" em [2, 1]; retorna null se inválido
+    // Converte "2 x 1" em [2, 1]; retorna null se inválido. Ignora os pênaltis
+    // entre parênteses ("1 x 1 (5 x 4)" → [1, 1]).
     function parseScore(text) {
-      const m = String(text).split("x");
+      const m = String(text).replace(/\([^)]*\)/, "").split("x");
       if (m.length !== 2) return null;
       const h = parseInt(m[0], 10);
       const a = parseInt(m[1], 10);
       if (Number.isNaN(h) || Number.isNaN(a)) return null;
       return [h, a];
+    }
+
+    // Formata o palpite para exibição: "1 x 1 (5 x 4)" → "5  1 x 1  4" com os
+    // pênaltis (ph/pa) em fonte menor e laranja. Sem pênaltis exibe "h x a".
+    function formatPrediction(text) {
+      if (!text) return "";
+      const m = String(text).match(/^\s*(\d+)\s*x\s*(\d+)(?:\s*\(\s*(\d+)\s*x\s*(\d+)\s*\))?\s*$/i);
+      if (!m) return String(text).replace(/x/i, '<span class="pred-x">x</span>');
+      const base = `${m[1]} <span class="pred-x">x</span> ${m[2]}`;
+      if (m[3] != null) {
+        return `<span class="pred-pen">${m[3]}</span>${base}<span class="pred-pen">${m[4]}</span>`;
+      }
+      return base;
     }
 
     // Pontuação: placar exato = 3, placar invertido = -2, só vencedor = 1, erro = 0
@@ -3710,11 +3736,201 @@
       return 0;
     }
 
+    // Jogos da "Segunda Fase" (28.Jun a 3.Jul) usam regras de pontos próprias.
+    function isSegundaFase(dateStr) {
+      return dateStr >= "2026-06-28" && dateStr <= "2026-07-03";
+    }
+
+    // Jogos das Oitavas e Quartas (4.Jul a 11.Jul) usam regras de pontos próprias.
+    function isOitavasQuartas(dateStr) {
+      return dateStr >= "2026-07-04" && dateStr <= "2026-07-11";
+    }
+
+    // Jogos da Semifinal e Disputa de 3º lugar (14.Jul a 18.Jul).
+    function isSemiBronze(dateStr) {
+      return dateStr >= "2026-07-14" && dateStr <= "2026-07-18";
+    }
+
+    // Jogo da Final (19.Jul).
+    function isFinal(dateStr) {
+      return dateStr === "2026-07-19";
+    }
+
+    // Converte um palpite que pode incluir pênaltis: "1 x 1 (5 x 4)" →
+    // { base:[1,1], pen:[5,4] }. Sem parênteses, pen é null.
+    function parsePrediction(text) {
+      const m = String(text).match(/^\s*(\d+)\s*x\s*(\d+)(?:\s*\(\s*(\d+)\s*x\s*(\d+)\s*\))?\s*$/i);
+      if (!m) return { base: null, pen: null };
+      return {
+        base: [parseInt(m[1], 10), parseInt(m[2], 10)],
+        pen: (m[3] != null && m[4] != null) ? [parseInt(m[3], 10), parseInt(m[4], 10)] : null
+      };
+    }
+
+    // Extrai o placar dos pênaltis lançado pelo admin (ph/pa) de um resultado.
+    function penFromResult(r) {
+      if (!r || r.ph === "" || r.ph == null || r.pa === "" || r.pa == null) return null;
+      const ph = parseInt(r.ph, 10), pa = parseInt(r.pa, 10);
+      if (Number.isNaN(ph) || Number.isNaN(pa)) return null;
+      return [ph, pa];
+    }
+
+    // Pontuação dos jogos da Segunda Fase (incl. extras de pênaltis).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreSegundaFase(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 4; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -3; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 2; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 4 : 2;
+        else penExtra = -2;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação dos jogos das Oitavas e Quartas (incl. extras de pênaltis).
+    // Acerto de vencedor/empate = +3 (pts-one), placar exato = +6 (pts-pos),
+    // placar invertido = -5 (pts-neg). Extras de pênaltis: vencedor + placar
+    // exato = +6, só vencedor = +3, errar o vencedor = -3 (total em pts-pen).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreOitavasQuartas(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 6; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -5; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 3; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 6 : 3;
+        else penExtra = -3;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação dos jogos da Semifinal e Disputa de 3º lugar (incl. extras de
+    // pênaltis). Acerto de vencedor/empate = +4 (pts-one), placar exato = +8
+    // (pts-pos), placar invertido = -6 (pts-neg). Extras de pênaltis: vencedor +
+    // placar exato = +8, só vencedor = +4, errar o vencedor = -4 (total pts-pen).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreSemiBronze(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 8; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -6; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 4; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 8 : 4;
+        else penExtra = -4;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação do jogo da Final (incl. extras de pênaltis). Acerto de
+    // vencedor/empate = +5 (pts-one), placar exato = +10 (pts-pos), placar
+    // invertido = -10 (pts-neg). Extras de pênaltis: vencedor + placar exato =
+    // +10, só vencedor = +5, errar o vencedor = -5 (total pts-pen).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreFinal(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 10; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -10; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 5; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 10 : 5;
+        else penExtra = -5;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação de um jogo conforme a fase. result=[rh,ra] (incl. prorrogação)
+    // ou null; penResult=[ph,pa] do shootout ou null. Retorna {points, cls,
+    // baseCls} ou null (sem pontos / oculto).
+    function scoreGameResult(predText, result, penResult, dateStr) {
+      if (!result) return null;
+      if (isSegundaFase(dateStr)) return scoreSegundaFase(predText, result, penResult);
+      if (isOitavasQuartas(dateStr)) return scoreOitavasQuartas(predText, result, penResult);
+      if (isSemiBronze(dateStr)) return scoreSemiBronze(predText, result, penResult);
+      if (isFinal(dateStr)) return scoreFinal(predText, result, penResult);
+      const pred = parseScore(predText);
+      if (!pred) return null;
+      const pts = computePoints(pred, result);
+      if (pts === 0) return null;
+      const cls = pts === 3 ? "pts-pos" : pts === 1 ? "pts-one" : "pts-neg";
+      return { points: pts, cls, baseCls: cls };
+    }
+
     function recomputeGame(gIndex) {
       const hInput = container.querySelector(`.result-box[data-game="${gIndex}"][data-side="h"]`);
       const aInput = container.querySelector(`.result-box[data-game="${gIndex}"][data-side="a"]`);
       const hasResult = hInput.value !== "" && aInput.value !== "";
       const result = hasResult ? [parseInt(hInput.value, 10), parseInt(aInput.value, 10)] : null;
+      const phInput = container.querySelector(`.penalty-box[data-game="${gIndex}"][data-side="h"]`);
+      const paInput = container.querySelector(`.penalty-box[data-game="${gIndex}"][data-side="a"]`);
+      const penResult = (phInput && paInput && phInput.value !== "" && paInput.value !== "")
+        ? [parseInt(phInput.value, 10), parseInt(paInput.value, 10)] : null;
+      const dateStr = dateInput.value;
 
       container.querySelectorAll(`.pts[data-game="${gIndex}"]`).forEach(span => {
         if (!result) {
@@ -3722,18 +3938,14 @@
           span.className = "pts pts-hidden";
           return;
         }
-        const pred = parseScore(span.dataset.pred);
-        const points = pred ? computePoints(pred, result) : 0;
-        if (points === 0) {
+        const sc = scoreGameResult(span.dataset.pred, result, penResult, dateStr);
+        if (!sc) {
           span.innerHTML = "&nbsp;";
           span.className = "pts pts-hidden";
           return;
         }
-        span.textContent = points > 0 ? `+${points}` : `${points}`;
-        const cls = points === 3 ? "pts-pos"
-          : points === 1 ? "pts-one"
-          : "pts-neg";
-        span.className = "pts " + cls;
+        span.textContent = sc.points > 0 ? `+${sc.points}` : `${sc.points}`;
+        span.className = "pts " + sc.cls;
       });
 
       updateTotals();
@@ -3750,8 +3962,8 @@
         if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
         const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
         if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
-        const pred = parseScore(g.p[pIndex]);
-        if (pred) total += computePoints(pred, result);
+        const sc = scoreGameResult(g.p[pIndex], result, penFromResult(r), g.d);
+        if (sc) total += sc.points;
       });
       return total;
     }
@@ -3765,14 +3977,15 @@
         if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
         const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
         if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
-        const pred = parseScore(g.p[pIndex]);
-        if (!pred) return;
-        const pts = computePoints(pred, result);
-        if (pts === 3) c3++;
-        else if (pts === 1) c1++;
-        else if (pts === -2) cNeg++;
+        const { base } = parsePrediction(g.p[pIndex]);
+        if (!base) return;
+        const sc = scoreGameResult(g.p[pIndex], result, penFromResult(r), g.d);
+        const cls = sc ? sc.baseCls : null;
+        if (cls === "pts-pos") c3++;
+        else if (cls === "pts-one") c1++;
+        else if (cls === "pts-neg") cNeg++;
         else c0++;
-        total += pts;
+        if (sc) total += sc.points;
       });
       return { c3, c1, c0, cNeg, total };
     }
