@@ -148,17 +148,5 @@
     "a": "0",
     "status": "finished"
   },
-  "__classTeams": {
-    "Grupo A": "MEX",
-    "Grupo A#2": "COR",
-    "Grupo B": "CAN",
-    "Grupo B#2": "BOS",
-    "Grupo C": "ESC",
-    "Grupo C#2": "BRA",
-    "Grupo K": "COL",
-    "3º Colocados#3": "ARA",
-    "3º Colocados#6": "ALG",
-    "3º Colocados#2": "EQU",
-    "3º Colocados#4": "CON"
-  }
+  "__classTeams": {}
 }
