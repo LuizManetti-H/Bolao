@@ -522,6 +522,18 @@
       font-size: 1rem;
       width: 170px;
     }
+    /* Colunas dos grupos A a L do Classificados mais estreitas */
+    #viewClassificados .fin-table thead th {
+      width: 125px;
+    }
+    /* Palpites dos jogadores alinhados à esquerda (lado esquerdo do box) */
+    #viewClassificados .fin-table .fin-cell {
+      text-align: left;
+    }
+    #viewClassificados .fin-table .fin-cell .fin-pick {
+      justify-content: flex-start;
+      margin-left: 3px;
+    }
 
     /* Células de palpite da Finalistas (Campeão, Vice, 3º, 4º) */
     .fin-table .fin-cell {
@@ -621,6 +633,39 @@
     .fin-table thead th .fin-team-input:disabled + .fin-team-hint {
       color: rgba(255, 255, 255, 0.55);
     }
+    /* Bandeira + sigla do time escolhido, exibidas dentro do box */
+    .fin-table thead th .fin-team-disp {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .fin-table thead th .fin-team-wrap.has-flag .fin-team-disp {
+      display: flex;
+    }
+    .fin-table thead th .fin-team-wrap.has-flag .fin-team-input {
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    .fin-table thead th .fin-team-flag {
+      height: 16px;
+      width: auto;
+      border-radius: 2px;
+      display: block;
+      flex: none;
+    }
+    .fin-table thead th .fin-team-sig {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      font-size: 19px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .fin-table thead th .fin-team-input:disabled ~ .fin-team-disp .fin-team-sig {
+      color: #fff;
+    }
     .fin-table thead th .fin-head-slots {
       display: flex;
       flex-direction: column;
@@ -635,6 +680,54 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 8px;
+    }
+    /* Lista de sele\u00e7\u00e3o de time (Admin) ao clicar num box de grupo */
+    .group-picker {
+      position: fixed;
+      z-index: 1000;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .group-picker-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 15px;
+      color: #0f172a;
+      text-align: left;
+      width: 100%;
+      white-space: nowrap;
+    }
+    .group-picker-opt:hover {
+      background: var(--accent-soft);
+    }
+    .group-picker-flag {
+      height: 18px;
+      width: auto;
+      border-radius: 2px;
+      display: block;
+    }
+    .group-picker-sig {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      font-weight: 700;
+      min-width: 3ch;
+    }
+    .group-picker-name {
+      color: #475569;
     }
 
     .matches-grid {
@@ -1693,6 +1786,7 @@
       "Brasil": ["BRA", "BRA - Brasil.png"],
       "Canadá": ["CAN", "CAN - Canada.png"],
       "Congo (RD)": ["CON", "CDR - Congo.png"],
+      "Congo": ["CON", "CDR - Congo.png"],
       "Costa do Marfim": ["CIV", "CIV - Costa do Marfim.png"],
       "Colômbia": ["COL", "COL - Colombia.png"],
       "Coreia do Sul": ["COR", "COR - Coreia.png"],
@@ -2229,9 +2323,58 @@
       });
       return total;
     }
-    // Placar Geral único do jogador: pontos dos Jogos + pontos dos Finalistas.
+    // Pontuação adicional dos Classificados.
+    // Grupo (A-L): 1 acerto = +1; 2 acertos fora de ordem = +2;
+    // 2 acertos na ordem = +4; nenhum acerto = -6 (penalidade).
+    function classGroupScore(pickArr, realArr) {
+      const r1 = realArr[0] || "", r2 = realArr[1] || "";
+      if (!r1 || !r2) return null; // resultado do grupo ainda não definido
+      const p1 = pickArr[0] || "", p2 = pickArr[1] || "";
+      const realSet = [r1, r2];
+      let correct = 0;
+      if (p1 && realSet.includes(p1)) correct++;
+      if (p2 && p2 !== p1 && realSet.includes(p2)) correct++;
+      if (correct === 2) {
+        if (p1 === r1 && p2 === r2) return { points: 4, cls: "pts-pos" };
+        return { points: 2, cls: "pts-one" };
+      }
+      if (correct === 1) return { points: 1, cls: "pts-one" };
+      return { points: -6, cls: "pts-neg" };
+    }
+    // 3º colocados: +1 por equipe acertada (independente do lugar), somados.
+    function classThirdsScore(pickArr, realArr) {
+      const reals = realArr.map(v => v || "").filter(Boolean);
+      if (!reals.length) return null;
+      const seen = new Set();
+      let count = 0;
+      pickArr.forEach(p => {
+        if (p && !seen.has(p) && reals.includes(p)) { count++; seen.add(p); }
+      });
+      if (count === 0) return { points: 0, cls: "pts-hidden", hidden: true };
+      return { points: count, cls: "pts-pos" };
+    }
+    function computeClassificadosTotal(pIndex, actual) {
+      let total = 0;
+      classCols.forEach(col => {
+        const pickName = (classData[col] && classData[col][pIndex]) || "";
+        const pickArr = pickName.split("|").map(s => s.trim().toLowerCase());
+        const realArr = (actual[col] || []).map(v => (v || "").trim().toLowerCase());
+        const sc = col === "3º Colocados"
+          ? classThirdsScore(pickArr, realArr)
+          : classGroupScore(pickArr, realArr);
+        if (sc && !sc.hidden) total += sc.points;
+      });
+      return total;
+    }
+    // Placar Geral único do jogador: Jogos + Finalistas + Classificados.
     function computeParticipantGrandTotal(pIndex, upToDate) {
-      return computeParticipantTotal(pIndex, upToDate) + computeFinalistaTotal(pIndex, getFinalActualTeams());
+      let classPts = 0;
+      // Os dados/constantes do Classificados são declarados mais abaixo; durante
+      // a inicialização esta função pode ser chamada antes disso (TDZ).
+      try { classPts = computeClassificadosTotal(pIndex, getClassActualTeams()); } catch (e) { classPts = 0; }
+      return computeParticipantTotal(pIndex, upToDate)
+        + computeFinalistaTotal(pIndex, getFinalActualTeams())
+        + classPts;
     }
     // Há ao menos um resultado lançado (placar de jogo ou time finalista definido)?
     function hasAnyResultOverall(upToDate) {
@@ -2382,6 +2525,21 @@
     // Reaproveita apenas as classes visuais (.fin-*) para a cópia fiel.
     // =====================================================================
     const CLASS_POINTS = { "Grupo A": 20, "Grupo B": 15, "Grupo C": 10, "Grupo D": 10, "Grupo E": 10, "Grupo F": 10, "Grupo G": 10, "Grupo H": 10, "Grupo I": 10, "Grupo J": 10, "Grupo K": 10, "Grupo L": 10, "3º Colocados": 10 };
+    // Times de cada grupo (de Grupos.csv) usados na seleção do Admin nos boxes.
+    const CLASS_GROUPS = {
+      "Grupo A": ["México", "Coreia do Sul", "África do Sul", "Rep. Tcheca"],
+      "Grupo B": ["Canadá", "Catar", "Bósnia", "Suiça"],
+      "Grupo C": ["Brasil", "Haiti", "Marrocos", "Escócia"],
+      "Grupo D": ["Estados Unidos", "Austrália", "Paraguai", "Turquia"],
+      "Grupo E": ["Alemanha", "Costa do Marfim", "Curaçao", "Equador"],
+      "Grupo F": ["Holanda", "Suécia", "Japão", "Tunísia"],
+      "Grupo G": ["Bélgica", "Irã", "Egito", "Nova Zelândia"],
+      "Grupo H": ["Espanha", "Arábia Saudita", "Cabo Verde", "Uruguai"],
+      "Grupo I": ["França", "Iraque", "Senegal", "Noruega"],
+      "Grupo J": ["Argentina", "Áustria", "Argélia", "Jordânia"],
+      "Grupo K": ["Portugal", "Uzbequistão", "Congo", "Colômbia"],
+      "Grupo L": ["Inglaterra", "Gana", "Croácia", "Panamá"],
+    };
     // Times "reais" do Classificados, gravados no GitHub sob chave própria.
     const CLASS_KEY = "__classTeams";
     let classData = {};
@@ -2396,7 +2554,35 @@
         if (i === document.activeElement) return;
         const key = i.dataset.slot === "1" ? i.dataset.col : i.dataset.col + "#" + i.dataset.slot;
         i.value = store[key] || "";
+        updateGroupBoxFlag(i);
       });
+    }
+    // Mostra a bandeira + sigla do time escolhido dentro do box do grupo.
+    function updateGroupBoxFlag(input) {
+      if (!input) return;
+      const wrap = input.closest(".fin-team-wrap");
+      if (!wrap) return;
+      const disp = wrap.querySelector(".fin-team-disp");
+      if (!disp) return;
+      // Grupos: usa os 4 times do grupo. 3º Colocados: usa todos os times.
+      const teams = CLASS_GROUPS[input.dataset.col] || Object.values(CLASS_GROUPS).flat();
+      const sig = (input.value || "").trim();
+      let file = null;
+      if (teams && sig) {
+        for (const name of teams) {
+          const info = TEAM_INFO[name];
+          if (info && info[0].toUpperCase() === sig.toUpperCase()) { file = info[1]; break; }
+        }
+      }
+      if (file) {
+        const flag = disp.querySelector(".fin-team-flag");
+        const sigEl = disp.querySelector(".fin-team-sig");
+        if (flag) flag.src = FLAGS_DIR + encodeURIComponent(file);
+        if (sigEl) sigEl.textContent = sig;
+        wrap.classList.add("has-flag");
+      } else {
+        wrap.classList.remove("has-flag");
+      }
     }
     function getClassActualTeams() {
       const store = getClassTeamsStore();
@@ -2439,23 +2625,19 @@
         const span = cell.querySelector(".pts");
         if (!span) return;
         const col = cell.dataset.col;
-        const reals = (actual[col] || []).map(v => (v || "").trim().toLowerCase()).filter(Boolean);
-        const pickName = (classData[col] && classData[col][parseInt(cell.dataset.participant, 10)]) || "";
-        const pick = pickName.trim().toLowerCase();
-        const flagSlot = cell.querySelector(".fin-flag");
-        if (pick && reals.includes(pick)) {
-          span.textContent = "+" + (CLASS_POINTS[col] || 0);
-          span.className = "pts pts-pos";
-          const info = TEAM_INFO[pickName];
-          if (flagSlot) {
-            flagSlot.innerHTML = info
-              ? `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${pickName}">`
-              : "";
-          }
-        } else {
+        const pIndex = parseInt(cell.dataset.participant, 10);
+        const pickName = (classData[col] && classData[col][pIndex]) || "";
+        const pickArr = pickName.split("|").map(s => s.trim().toLowerCase());
+        const realArr = (actual[col] || []).map(v => (v || "").trim().toLowerCase());
+        const sc = col === "3º Colocados"
+          ? classThirdsScore(pickArr, realArr)
+          : classGroupScore(pickArr, realArr);
+        if (!sc || sc.hidden) {
           span.innerHTML = "&nbsp;";
           span.className = "pts pts-hidden";
-          if (flagSlot) flagSlot.innerHTML = "";
+        } else {
+          span.textContent = (sc.points > 0 ? "+" : "") + sc.points;
+          span.className = "pts " + sc.cls;
         }
       });
     }
@@ -2495,7 +2677,7 @@
           const val = (savedClassTeams[key] || "").replace(/"/g, "&quot;");
           const hint = isGrupo ? s + letter : String(s);
           slotsHtml +=
-            `<span class="fin-team-wrap"><input type="text" class="fin-team-input" data-col="${c}" data-slot="${s}" value="${val}" placeholder=" " ${adminMode ? "" : "disabled"}><span class="fin-team-hint">${hint}</span></span>`;
+            `<span class="fin-team-wrap"><input type="text" class="fin-team-input" data-col="${c}" data-slot="${s}" value="${val}" placeholder=" " ${adminMode ? "" : "disabled"}><span class="fin-team-hint">${hint}</span>${(isGrupo || isThirds) ? '<span class="fin-team-disp"><img class="fin-team-flag" alt=""><span class="fin-team-sig"></span></span>' : ""}</span>`;
         }
         return `<th${isThirds ? ' class="fin-th--wide"' : ""}><div class="fin-head"><span class="fin-head-title">${c}</span><div class="fin-head-slots">${slotsHtml}</div></div></th>`;
       }).join("");
@@ -2543,6 +2725,7 @@
       }
       const key = input.dataset.slot === "1" ? input.dataset.col : input.dataset.col + "#" + input.dataset.slot;
       resultsData[CLASS_KEY][key] = input.value;
+      updateGroupBoxFlag(input);
       pendingKeys.add(CLASS_KEY);
       updateTotals();
       schedulePush();
@@ -2558,6 +2741,134 @@
       pendingKeys.add(CLASS_KEY);
       updateTotals();
       schedulePush();
+    });
+
+    // Seletor de time dos boxes dos grupos (A-L) no modo Admin: clicar no box
+    // abre uma lista com os 4 times do grupo; ao escolher, grava a sigla.
+    // Os boxes de "3º Colocados" abrem uma lista com todos os times que NÃO
+    // foram escolhidos nos grupos A-L.
+    let groupPickerMenu = null;
+    // Identifica um box de grupo (Grupo A-L) do Classificados, na tabela real
+    // ou no cabeçalho flutuante. A coluna "3º Colocados" fica de fora.
+    function isClassGroupBox(inp) {
+      if (!inp || !inp.classList || !inp.classList.contains("fin-team-input")) return false;
+      const col = inp.dataset && inp.dataset.col;
+      if (!col || col.indexOf("Grupo ") !== 0) return false;
+      if (inp.closest("#viewClassificados")) return true;
+      return !!(classStickyHead && classStickyHead.contains(inp));
+    }
+    // Identifica um box da coluna "3º Colocados" (tabela real ou cabeçalho fixo).
+    function isClassThirdBox(inp) {
+      if (!inp || !inp.classList || !inp.classList.contains("fin-team-input")) return false;
+      const col = inp.dataset && inp.dataset.col;
+      if (col !== "3º Colocados") return false;
+      if (inp.closest("#viewClassificados")) return true;
+      return !!(classStickyHead && classStickyHead.contains(inp));
+    }
+    function isClassPickerBox(inp) {
+      return isClassGroupBox(inp) || isClassThirdBox(inp);
+    }
+    function closeGroupPicker() {
+      if (groupPickerMenu) { groupPickerMenu.remove(); groupPickerMenu = null; }
+      document.removeEventListener("mousedown", onGroupPickerOutside, true);
+    }
+    function onGroupPickerOutside(e) {
+      if (!groupPickerMenu) return;
+      if (groupPickerMenu.contains(e.target)) return;
+      if (isClassPickerBox(e.target.closest(".fin-team-input"))) return;
+      closeGroupPicker();
+    }
+    // Monta o menu de seleção para um box, com a lista de times informada.
+    function buildClassPicker(input, teamNames) {
+      closeGroupPicker();
+      const view = document.getElementById("viewClassificados");
+      const col = input.dataset.col;
+      const slot = input.dataset.slot;
+      if (!teamNames || !teamNames.length) return;
+      const menu = document.createElement("div");
+      menu.className = "group-picker";
+      teamNames.forEach(name => {
+        const info = TEAM_INFO[name];
+        const sig = info ? info[0] : name;
+        const opt = document.createElement("button");
+        opt.type = "button";
+        opt.className = "group-picker-opt";
+        opt.innerHTML =
+          (info ? `<img class="group-picker-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="">` : "") +
+          `<span class="group-picker-sig">${sig}</span><span class="group-picker-name">${name}</span>`;
+        opt.addEventListener("click", () => {
+          const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
+          if (real) {
+            real.value = sig;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          syncClassStickyInputs();
+          closeGroupPicker();
+        });
+        menu.appendChild(opt);
+      });
+      document.body.appendChild(menu);
+      const r = input.getBoundingClientRect();
+      menu.style.top = (r.bottom + 4) + "px";
+      menu.style.left = r.left + "px";
+      menu.style.minWidth = r.width + "px";
+      const mr = menu.getBoundingClientRect();
+      if (mr.right > window.innerWidth - 8) {
+        menu.style.left = Math.max(8, window.innerWidth - 8 - mr.width) + "px";
+      }
+      if (mr.bottom > window.innerHeight - 8) {
+        menu.style.top = Math.max(8, r.top - 4 - mr.height) + "px";
+      }
+      groupPickerMenu = menu;
+      setTimeout(() => document.addEventListener("mousedown", onGroupPickerOutside, true), 0);
+    }
+    function openGroupPicker(input) {
+      const teams = CLASS_GROUPS[input.dataset.col];
+      if (!teams) return;
+      const sorted = [...teams].sort((a, b) => a.localeCompare(b, "pt-BR"));
+      buildClassPicker(input, sorted);
+    }
+    // Siglas (maiúsculas) já escolhidas nos boxes dos grupos A-L.
+    function getChosenGroupSigs() {
+      const actual = getClassActualTeams();
+      const set = new Set();
+      Object.keys(CLASS_GROUPS).forEach(col => {
+        (actual[col] || []).forEach(v => {
+          const s = (v || "").trim().toUpperCase();
+          if (s) set.add(s);
+        });
+      });
+      return set;
+    }
+    // Lista de seleção dos "3º Colocados": todos os times que NÃO foram
+    // escolhidos como classificados nos grupos A-L.
+    function openThirdPicker(input) {
+      const chosen = getChosenGroupSigs();
+      const teams = [];
+      Object.keys(CLASS_GROUPS).forEach(col => {
+        CLASS_GROUPS[col].forEach(name => {
+          const info = TEAM_INFO[name];
+          const sig = (info ? info[0] : name).toUpperCase();
+          if (!chosen.has(sig)) teams.push(name);
+        });
+      });
+      teams.sort((a, b) => a.localeCompare(b, "pt-BR"));
+      buildClassPicker(input, teams);
+    }
+    // Impede o foco/teclado ao tocar no box e abre a lista de times.
+    document.addEventListener("mousedown", e => {
+      if (adminMode && isClassPickerBox(e.target.closest(".fin-team-input"))) e.preventDefault();
+    }, true);
+    document.addEventListener("click", e => {
+      if (!adminMode) return;
+      const inp = e.target.closest(".fin-team-input");
+      if (isClassGroupBox(inp)) {
+        e.preventDefault();
+        openGroupPicker(inp);
+      } else if (isClassThirdBox(inp)) {
+        e.preventDefault();
+        openThirdPicker(inp);
+      }
     });
 
     selectTab("viewJogos");
@@ -3029,6 +3340,7 @@
         const slot = cloneInput.dataset.slot;
         const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
         if (real) cloneInput.value = real.value;
+        updateGroupBoxFlag(cloneInput);
       });
     }
 
