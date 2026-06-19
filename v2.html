@@ -17,8 +17,8 @@
       --border: #e2e8f0;
       --accent: #16a34a;
       --accent-soft: #dcfce7;
-      --header-grad-1: #1e3a8a;
-      --header-grad-2: #16a34a;
+      --header-grad-1: #009739;
+      --header-grad-2: #ffcc29;
     }
 
     * { box-sizing: border-box; }
@@ -424,6 +424,19 @@
       letter-spacing: 0.5px;
     }
 
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      height: 44px;
+      width: auto;
+      display: block;
+    }
+
     header .subtitle {
       margin: 4px 0 0;
       font-size: 1rem;
@@ -450,7 +463,7 @@
       font: inherit;
       font-weight: 700;
       font-size: 0.9rem;
-      color: #fff;
+      color: #14532d;
       height: 30px;
       padding: 0 22px;
       min-width: 125px;
@@ -459,14 +472,14 @@
       justify-content: center;
       border: none;
       border-radius: 8px;
-      background: var(--accent);
+      background: var(--header-grad-2);
       box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
       cursor: pointer;
       white-space: nowrap;
     }
 
     .intro-placar-btn:hover {
-      background: #15803d;
+      background: #eab308;
     }
 
     .intro-placar-btn:focus {
@@ -475,11 +488,12 @@
     }
 
     .intro-placar-btn.active {
-      background: var(--header-grad-1);
+      background: #002776;
+      color: #fff;
     }
 
     .intro-placar-btn.active:hover {
-      background: var(--header-grad-1);
+      background: #002776;
     }
 
     main {
@@ -1279,7 +1293,10 @@
       <button type="button" id="scalePlus" aria-label="Aumentar escala">+</button>
     </div>
     <button type="button" class="admin-button" id="adminButton">Admin</button>
-    <h1>Bolão</h1>
+    <div class="brand">
+      <img class="brand-logo" src="CBF.png" alt="CBF">
+      <h1>Bolão</h1>
+    </div>
     <p class="subtitle">Copa do Mundo FIFA 2026</p>
   </header>
 
