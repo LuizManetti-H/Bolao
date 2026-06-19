@@ -523,7 +523,8 @@
       width: 170px;
     }
     /* Colunas dos grupos A a L do Classificados mais estreitas */
-    #viewClassificados .fin-table thead th {
+    #viewClassificados .fin-table thead th,
+    .sticky-head--class .fin-table thead th {
       width: 125px;
     }
     /* Palpites dos jogadores alinhados à esquerda (lado esquerdo do box) */
@@ -674,7 +675,7 @@
     }
     /* Coluna "3º Colocados": única mais larga, com 8 caixas em grade 4x2 */
     .fin-table thead th.fin-th--wide {
-      min-width: 450px;
+      min-width: 400px;
     }
     .fin-table thead th.fin-th--wide .fin-head-slots {
       display: grid;
@@ -3277,7 +3278,7 @@
       if (!board || !nameTable || !finTable || !realScroll) return;
 
       classStickyHead = document.createElement("div");
-      classStickyHead.className = "sticky-head";
+      classStickyHead.className = "sticky-head sticky-head--class";
       classStickyHead.style.transformOrigin = "top left";
       classStickyHead.style.transform = "scale(" + (pageScale || 1) + ")";
 
