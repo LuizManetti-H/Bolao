@@ -2064,6 +2064,9 @@
       } else {
         teardownFinSticky();
       }
+      if (viewId === "viewJogos") {
+        requestAnimationFrame(syncBoardHeights);
+      }
     }
     tabButtons.forEach(t => {
       if (t.btn) t.btn.addEventListener("click", () => selectTab(t.view));
@@ -2324,6 +2327,8 @@
 
     // Sincroniza a altura do cabeçalho e do rodapé da coluna fixa com a tabela de jogos
     function syncBoardHeights() {
+      const viewJogos = document.getElementById("viewJogos");
+      if (viewJogos && viewJogos.hidden) return;
       const nameTable = container.querySelector(".name-table");
       const gamesTable = container.querySelector(".games-table");
       if (!nameTable || !gamesTable) return;
@@ -2338,6 +2343,9 @@
       const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
       const headH = gHeadRow.getBoundingClientRect().height / s;
       const footH = gFootRow.getBoundingClientRect().height / s;
+      // Se a tabela estiver oculta/sem layout, as medidas vêm zeradas:
+      // não aplica para não fixar um cabeçalho com altura inválida.
+      if (headH <= 0 || footH <= 0) return;
       nHead.style.height = headH + "px";
       nFoot.style.height = footH + "px";
     }
