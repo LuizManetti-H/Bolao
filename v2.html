@@ -856,6 +856,12 @@
     }
     .fin-status-bar .save-status { margin-left: 0; }
 
+    /* Sobe toda a tabela de Finalistas (cabeçalhos + corpo) 20px para cima */
+    #viewFinalistas .tab-main {
+      padding-top: 4px;
+      margin-top: -10px;
+    }
+
     .date-button {
       font: inherit;
       font-weight: 600;
@@ -1447,6 +1453,11 @@
         document.body.style.height = (zoomWrap.offsetHeight * pageScale) + "px";
         if (typeof updateStickyGeometry === "function") updateStickyGeometry();
         if (typeof updateStickyHeader === "function") updateStickyHeader();
+        if (typeof finStickyHead !== "undefined" && finStickyHead) {
+          finStickyHead.style.transform = "scale(" + pageScale + ")";
+          updateFinStickyGeometry();
+          updateFinSticky();
+        }
         fitIntroButtons();
       });
     }
@@ -1539,6 +1550,8 @@
       document.querySelectorAll("#viewFinalistas .phase-label--static").forEach(el => el.classList.toggle("clickable", on));
       setSaveStatus("");
       if (container.querySelector(".board")) setupStickyHeader();
+      const finView = document.getElementById("viewFinalistas");
+      if (finView && !finView.hidden) setupFinSticky();
     }
 
     // ---- Persistência dos placares (GitHub) ----
@@ -2045,8 +2058,12 @@
         const view = document.getElementById(t.view);
         if (view) view.hidden = !isActive;
       });
-      if (viewId === "viewFinalistas") requestAnimationFrame(syncFinalistasHeader);
-      if (viewId === "viewFinalistas") updateFinalistasTotals();
+      if (viewId === "viewFinalistas") {
+        requestAnimationFrame(() => { syncFinalistasHeader(); setupFinSticky(); });
+        updateFinalistasTotals();
+      } else {
+        teardownFinSticky();
+      }
     }
     tabButtons.forEach(t => {
       if (t.btn) t.btn.addEventListener("click", () => selectTab(t.view));
@@ -2500,6 +2517,137 @@
     window.addEventListener("resize", () => {
       updateStickyGeometry();
       updateStickyHeader();
+    });
+
+    // ---- Cabeçalho flutuante da aba Finalistas (mesmo modelo dos Jogos) ----
+    var finStickyHead = null;
+    var finStickyScroll = null;
+
+    function teardownFinSticky() {
+      if (finStickyHead) {
+        finStickyHead.remove();
+        finStickyHead = null;
+        finStickyScroll = null;
+      }
+    }
+
+    function setupFinSticky() {
+      teardownFinSticky();
+      const view = document.getElementById("viewFinalistas");
+      if (!view || view.hidden) return;
+      const board = view.querySelector(".board");
+      const nameTable = view.querySelector(".name-table");
+      const finTable = view.querySelector(".fin-table");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board || !nameTable || !finTable || !realScroll) return;
+
+      finStickyHead = document.createElement("div");
+      finStickyHead.className = "sticky-head";
+      finStickyHead.style.transformOrigin = "top left";
+      finStickyHead.style.transform = "scale(" + (pageScale || 1) + ")";
+
+      const cloneBoard = document.createElement("div");
+      cloneBoard.className = "board";
+
+      const cloneNameTable = document.createElement("table");
+      cloneNameTable.className = "name-table";
+      cloneNameTable.appendChild(nameTable.querySelector("thead").cloneNode(true));
+
+      finStickyScroll = document.createElement("div");
+      finStickyScroll.className = "scroll-area";
+      const cloneFinTable = document.createElement("table");
+      cloneFinTable.className = finTable.className;
+      cloneFinTable.appendChild(finTable.querySelector("thead").cloneNode(true));
+      finStickyScroll.appendChild(cloneFinTable);
+
+      cloneBoard.appendChild(cloneNameTable);
+      cloneBoard.appendChild(finStickyScroll);
+      finStickyHead.appendChild(cloneBoard);
+      document.body.appendChild(finStickyHead);
+
+      // Espelha a edição dos times (Campeão, Vice, etc.) do cabeçalho flutuante
+      finStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        cloneInput.disabled = !adminMode;
+        const col = cloneInput.dataset.col;
+        cloneInput.addEventListener("input", () => {
+          const real = view.querySelector(`.fin-team-input[data-col="${col}"]`);
+          if (real) {
+            real.value = cloneInput.value;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+      });
+
+      // Clicar no rótulo "Finalistas" do cabeçalho flutuante (limpa em modo Admin)
+      const clonePhase = finStickyHead.querySelector(".phase-label--static");
+      if (clonePhase) {
+        clonePhase.addEventListener("click", () => {
+          const real = view.querySelector(".phase-label--static");
+          if (real) real.click();
+        });
+      }
+
+      // Mantém a rolagem horizontal do clone sincronizada com a tabela real
+      realScroll.addEventListener("scroll", () => {
+        if (finStickyScroll) finStickyScroll.scrollLeft = realScroll.scrollLeft;
+      });
+      finStickyScroll.addEventListener("scroll", () => {
+        realScroll.scrollLeft = finStickyScroll.scrollLeft;
+      });
+
+      updateFinStickyGeometry();
+      updateFinSticky();
+    }
+
+    function syncFinStickyInputs() {
+      if (!finStickyHead) return;
+      const view = document.getElementById("viewFinalistas");
+      finStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        const col = cloneInput.dataset.col;
+        const real = view.querySelector(`.fin-team-input[data-col="${col}"]`);
+        if (real) cloneInput.value = real.value;
+      });
+    }
+
+    function updateFinStickyGeometry() {
+      if (!finStickyHead) return;
+      const view = document.getElementById("viewFinalistas");
+      const board = view.querySelector(".board");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const s = pageScale || 1;
+      finStickyHead.style.left = rect.left + "px";
+      finStickyHead.style.width = (rect.width / s) + "px";
+      if (realScroll && finStickyScroll) {
+        finStickyScroll.scrollLeft = realScroll.scrollLeft;
+      }
+    }
+
+    function updateFinSticky() {
+      if (!finStickyHead) return;
+      const view = document.getElementById("viewFinalistas");
+      if (!view || view.hidden) { finStickyHead.classList.remove("visible"); return; }
+      const board = view.querySelector(".board");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const headH = (finStickyHead.offsetHeight || 0) * (pageScale || 1);
+      const shouldShow = rect.top < 0 && rect.bottom > headH + 4;
+      if (shouldShow) {
+        if (!finStickyHead.classList.contains("visible")) {
+          finStickyHead.classList.add("visible");
+          syncFinStickyInputs();
+        }
+        updateFinStickyGeometry();
+      } else {
+        finStickyHead.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", updateFinSticky, { passive: true });
+    window.addEventListener("resize", () => {
+      updateFinStickyGeometry();
+      updateFinSticky();
     });
 
     function render() {
