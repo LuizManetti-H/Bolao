@@ -148,20 +148,7 @@
     "a": "0",
     "status": "finished"
   },
-  "__classTeams": {
-    "Grupo A": "MEX",
-    "Grupo A#2": "COR",
-    "Grupo D": "EUA",
-    "Grupo D#2": "TUR",
-    "3º Colocados#2": "ALG",
-    "3º Colocados#7": "ARA",
-    "3º Colocados#5": "AFS",
-    "Grupo L": "CRO",
-    "Grupo K": "COL",
-    "Grupo J#2": "ARG",
-    "Grupo J": "ALG",
-    "Grupo K#2": "POR"
-  },
+  "__classTeams": {},
   "2026-06-19|Estados Unidos|Austrália": {
     "h": "1",
     "a": "0",
