@@ -2389,8 +2389,10 @@
       return gamesHas || finHas;
     }
     // Preenche um conjunto de total-box com o Placar Geral e as cores de ranking.
-    function paintTotals(boxes, upToDate) {
-      const totals = boxes.map(box => computeParticipantGrandTotal(parseInt(box.dataset.participant, 10), upToDate));
+    // totalFn opcional permite calcular um placar específico (ex.: só Classificados).
+    function paintTotals(boxes, upToDate, totalFn) {
+      const fn = totalFn || computeParticipantGrandTotal;
+      const totals = boxes.map(box => fn(parseInt(box.dataset.participant, 10), upToDate));
       const hasAnyResult = hasAnyResultOverall(upToDate);
       const distinct = [...new Set(totals)].sort((a, b) => b - a);
       const first = distinct[0], second = distinct[1], third = distinct[2];
@@ -2411,7 +2413,17 @@
       if (!view) return;
       // Sincroniza os campos da coluna com os times publicados no GitHub.
       applyFinalTeamsToInputs();
-      paintTotals(Array.from(view.querySelectorAll(".total-box")), dateInput.value);
+      // Placar exibido nesta aba: apenas os pontos do modo Finalistas.
+      const totalBoxes = Array.from(view.querySelectorAll(".total-box"));
+      paintTotals(
+        totalBoxes,
+        dateInput.value,
+        (pIndex) => computeFinalistaTotal(pIndex, getFinalActualTeams())
+      );
+      // Score zero sempre com fundo branco e fonte preta.
+      totalBoxes.forEach(box => {
+        if (parseInt(box.textContent, 10) === 0) box.className = "total-box rank-none";
+      });
       // Selo de pontos (+20 / +15 / +10) em cada palpite certo.
       const actual = getFinalActualTeams();
       view.querySelectorAll(".fin-cell").forEach(cell => {
@@ -2619,8 +2631,17 @@
       const view = document.getElementById("viewClassificados");
       if (!view) return;
       applyClassTeamsToInputs();
-      // Placar Geral é único (Jogos + Finalistas): mantém a cópia fiel.
-      paintTotals(Array.from(view.querySelectorAll(".total-box")), dateInput.value);
+      // Placar exibido nesta aba: apenas os pontos do modo Classificados.
+      const totalBoxes = Array.from(view.querySelectorAll(".total-box"));
+      paintTotals(
+        totalBoxes,
+        dateInput.value,
+        (pIndex) => computeClassificadosTotal(pIndex, getClassActualTeams())
+      );
+      // Score zero sempre com fundo branco e fonte preta.
+      totalBoxes.forEach(box => {
+        if (parseInt(box.textContent, 10) === 0) box.className = "total-box rank-none";
+      });
       const actual = getClassActualTeams();
       view.querySelectorAll(".fin-cell").forEach(cell => {
         const span = cell.querySelector(".pts");
