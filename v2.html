@@ -587,6 +587,11 @@
     }
     .fin-table thead th .fin-team-input:disabled::placeholder {
       color: rgba(255, 255, 255, 0.55);
+      -webkit-text-fill-color: rgba(255, 255, 255, 0.55);
+    }
+    /* Finalistas: campo vazio com mesma fonte/cor da marca "1A/1B" do Classificados */
+    #viewFinalistas .fin-team-input::placeholder {
+      font-weight: 600;
     }
     .fin-table thead th .fin-team-input:focus {
       outline: none;
@@ -1358,7 +1363,7 @@
     </div>
     <button type="button" class="admin-button" id="adminButton">Admin</button>
     <div class="brand">
-      <img class="brand-logo" src="CBF.png" alt="CBF">
+      <img class="brand-logo" src="flags/CBF.png" alt="CBF">
       <h1>Bolão</h1>
     </div>
     <p class="subtitle">Copa do Mundo FIFA 2026</p>
@@ -2305,10 +2310,11 @@
       const nameRows = participants.map((name, pIndex) =>
         `<tr><td class="name" data-participant="${pIndex}"><span class="name-label">${name}</span><span class="total-box" data-participant="${pIndex}">0</span></td></tr>`).join("");
       const savedFinalTeams = getFinalTeamsStore();
+      const FINAL_PLACEHOLDER = { "Campeão": "W104", "Vice-campeão": "L104", "3º Lugar": "W103", "4º Lugar": "L103" };
       const headerCells = cols.map(c => {
         const val = (savedFinalTeams[c] || "").replace(/"/g, "&quot;");
         return `<th><div class="fin-head"><span class="fin-head-title">${c}</span>` +
-          `<input type="text" class="fin-team-input" data-col="${c}" value="${val}" placeholder="Time" ${adminMode ? "" : "disabled"}></div></th>`;
+          `<input type="text" class="fin-team-input" data-col="${c}" value="${val}" placeholder="${FINAL_PLACEHOLDER[c] || ""}" ${adminMode ? "" : "disabled"}></div></th>`;
       }).join("");
       const bodyRows = participants.map((name, pIndex) => {
         return `<tr>${cols.map(col => {
