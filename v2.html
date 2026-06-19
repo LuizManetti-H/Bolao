@@ -593,6 +593,44 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 2px var(--accent-soft);
     }
+    /* Marca d'água "1A/2A" exibida ao fundo do campo enquanto estiver vazio */
+    .fin-table thead th .fin-team-wrap {
+      position: relative;
+      display: block;
+      width: 100%;
+    }
+    .fin-table thead th .fin-team-hint {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      font-size: 19px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .fin-table thead th .fin-team-input:placeholder-shown + .fin-team-hint {
+      display: flex;
+    }
+    .fin-table thead th .fin-team-input:disabled + .fin-team-hint {
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .fin-table thead th .fin-head-slots {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    /* Coluna "3º Colocados": única mais larga, com 8 caixas em grade 4x2 */
+    .fin-table thead th.fin-th--wide {
+      min-width: 450px;
+    }
+    .fin-table thead th.fin-th--wide .fin-head-slots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
 
     .matches-grid {
       background: var(--card);
@@ -876,6 +914,12 @@
       margin-top: -10px;
     }
 
+    /* Mesma subida da tabela no modo Classificados */
+    #viewClassificados .tab-main {
+      padding-top: 4px;
+      margin-top: -10px;
+    }
+
     .date-button {
       font: inherit;
       font-weight: 600;
@@ -959,6 +1003,26 @@
     .team-sigla {
       font-family: "Red Hat Mono", ui-monospace, monospace;
       line-height: 1;
+    }
+
+    /* Palpites dos jogadores no modo "Classificados" também em Red Hat Mono */
+    #viewClassificados .fin-name {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    #viewClassificados .fin-sig {
+      line-height: 1;
+    }
+    /* "|" desenhado para ficar perfeitamente centralizado com as siglas */
+    #viewClassificados .fin-sep {
+      display: inline-block;
+      width: 2px;
+      height: 0.92em;
+      background: currentColor;
+      border-radius: 1px;
+      opacity: 0.55;
     }
 
     .games-table.wide-cols .match-teams .team {
@@ -1475,6 +1539,11 @@
           updateFinStickyGeometry();
           updateFinSticky();
         }
+        if (typeof classStickyHead !== "undefined" && classStickyHead) {
+          classStickyHead.style.transform = "scale(" + pageScale + ")";
+          updateClassStickyGeometry();
+          updateClassSticky();
+        }
         fitIntroButtons();
       });
     }
@@ -1564,11 +1633,13 @@
       container.classList.toggle("admin-mode", on);
       updateResultBoxesEditable();
       document.querySelectorAll(".fin-team-input").forEach(i => { i.disabled = !on; });
-      document.querySelectorAll("#viewFinalistas .phase-label--static").forEach(el => el.classList.toggle("clickable", on));
+      document.querySelectorAll("#viewFinalistas .phase-label--static, #viewClassificados .phase-label--static").forEach(el => el.classList.toggle("clickable", on));
       setSaveStatus("");
       if (container.querySelector(".board")) setupStickyHeader();
       const finView = document.getElementById("viewFinalistas");
       if (finView && !finView.hidden) setupFinSticky();
+      const clsView = document.getElementById("viewClassificados");
+      if (clsView && !clsView.hidden) setupClassSticky();
     }
 
     // ---- Persistência dos placares (GitHub) ----
@@ -2081,6 +2152,12 @@
       } else {
         teardownFinSticky();
       }
+      if (viewId === "viewClassificados") {
+        requestAnimationFrame(() => { syncClassificadosHeader(); setupClassSticky(); });
+        updateClassificadosTotals();
+      } else {
+        teardownClassSticky();
+      }
       if (viewId === "viewJogos") {
         requestAnimationFrame(syncBoardHeights);
       }
@@ -2288,6 +2365,191 @@
       document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => { i.value = ""; });
       resultsData[FINALS_KEY] = {};
       pendingKeys.add(FINALS_KEY);
+      updateTotals();
+      schedulePush();
+    });
+
+    // =====================================================================
+    // Modo "Classificados" — cópia independente do modo "Finalistas".
+    // Mantém código próprio (dados, chave de storage, render, totais e
+    // cabeçalho flutuante) para que mudanças aqui não afetem o Finalistas.
+    // Reaproveita apenas as classes visuais (.fin-*) para a cópia fiel.
+    // =====================================================================
+    const CLASS_POINTS = { "Grupo A": 20, "Grupo B": 15, "Grupo C": 10, "Grupo D": 10, "Grupo E": 10, "Grupo F": 10, "Grupo G": 10, "Grupo H": 10, "Grupo I": 10, "Grupo J": 10, "Grupo K": 10, "Grupo L": 10, "3º Colocados": 10 };
+    // Times "reais" do Classificados, gravados no GitHub sob chave própria.
+    const CLASS_KEY = "__classTeams";
+    let classData = {};
+    let classCols = [];
+    function getClassTeamsStore() {
+      const v = resultsData[CLASS_KEY];
+      return (v && typeof v === "object") ? v : {};
+    }
+    function applyClassTeamsToInputs() {
+      const store = getClassTeamsStore();
+      document.querySelectorAll("#viewClassificados .fin-team-input").forEach(i => {
+        if (i === document.activeElement) return;
+        const key = i.dataset.slot === "1" ? i.dataset.col : i.dataset.col + "#" + i.dataset.slot;
+        i.value = store[key] || "";
+      });
+    }
+    function getClassActualTeams() {
+      const store = getClassTeamsStore();
+      const map = {};
+      // Reúne todos os campos (2 por coluna; 8 na coluna "3º Colocados").
+      document.querySelectorAll("#viewClassificados .fin-team-input").forEach(i => {
+        const col = i.dataset.col;
+        const idx = parseInt(i.dataset.slot, 10) - 1;
+        const key = i.dataset.slot === "1" ? col : col + "#" + i.dataset.slot;
+        if (!map[col]) map[col] = [];
+        map[col][idx] = i.value || store[key] || "";
+      });
+      return map;
+    }
+    // Iguala a altura dos cabeçalhos da coluna de nomes e das colunas de palpite.
+    function syncClassificadosHeader() {
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) return;
+      const nameHead = view.querySelector(".name-table thead th");
+      const gamesThs = view.querySelectorAll(".games-table thead th");
+      const gamesHeadRow = view.querySelector(".games-table thead tr");
+      if (!nameHead || !gamesThs.length || !gamesHeadRow) return;
+      const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+      nameHead.style.height = "auto";
+      gamesThs.forEach(th => { th.style.height = "auto"; });
+      const nameH = nameHead.getBoundingClientRect().height / s;
+      const gamesH = gamesHeadRow.getBoundingClientRect().height / s;
+      const maxH = Math.max(nameH, gamesH);
+      nameHead.style.height = maxH + "px";
+      gamesThs.forEach(th => { th.style.height = maxH + "px"; });
+    }
+    function updateClassificadosTotals() {
+      const view = document.getElementById("viewClassificados");
+      if (!view) return;
+      applyClassTeamsToInputs();
+      // Placar Geral é único (Jogos + Finalistas): mantém a cópia fiel.
+      paintTotals(Array.from(view.querySelectorAll(".total-box")), dateInput.value);
+      const actual = getClassActualTeams();
+      view.querySelectorAll(".fin-cell").forEach(cell => {
+        const span = cell.querySelector(".pts");
+        if (!span) return;
+        const col = cell.dataset.col;
+        const reals = (actual[col] || []).map(v => (v || "").trim().toLowerCase()).filter(Boolean);
+        const pickName = (classData[col] && classData[col][parseInt(cell.dataset.participant, 10)]) || "";
+        const pick = pickName.trim().toLowerCase();
+        const flagSlot = cell.querySelector(".fin-flag");
+        if (pick && reals.includes(pick)) {
+          span.textContent = "+" + (CLASS_POINTS[col] || 0);
+          span.className = "pts pts-pos";
+          const info = TEAM_INFO[pickName];
+          if (flagSlot) {
+            flagSlot.innerHTML = info
+              ? `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${pickName}">`
+              : "";
+          }
+        } else {
+          span.innerHTML = "&nbsp;";
+          span.className = "pts pts-hidden";
+          if (flagSlot) flagSlot.innerHTML = "";
+        }
+      });
+    }
+    function renderClassificados() {
+      const view = document.getElementById("viewClassificados");
+      if (!view) return;
+      const cols = ["Grupo A", "Grupo B", "Grupo C", "Grupo D", "Grupo E", "Grupo F", "Grupo G", "Grupo H", "Grupo I", "Grupo J", "Grupo K", "Grupo L", "3º Colocados"];
+      // Palpites de cada jogador (siglas dos times separadas por "|").
+      const classificados = {
+        "Grupo A": ["MEX|COR","MEX|AFS","MEX|COR","COR|MEX","MEX|COR","MEX|COR","TCH|COR","MEX|TCH","MEX|COR","MEX|AFS","COR|MEX","COR|MEX","MEX|COR","MEX|COR","MEX|COR","MEX|TCH","MEX|COR","TCH|MEX","MEX|COR","MEX|COR","MEX|COR","TCH|MEX"],
+        "Grupo B": ["CAN|SUI","CAN|SUI","SUI|CAN","SUI|CAN","SUI|CAN","SUI|QAT","SUI|CAN","SUI|CAN","SUI|CAN","SUI|CAN","SUI|CAN","SUI|BOS","SUI|CAN","SUI|CAN","SUI|CAN","CAN|SUI","SUI|CAN","SUI|CAN","CAN|SUI","SUI|BOS","SUI|CAN","SUI|CAN"],
+        "Grupo C": ["BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|ESC","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR"],
+        "Grupo D": ["EUA|TUR","EUA|AUS","TUR|PAR","TUR|PAR","EUA|AUS","EUA|PAR","EUA|TUR","EUA|PAR","TUR|EUA","EUA|TUR","TUR|PAR","TUR|PAR","EUA|TUR","PAR|EUA","PAR|EUA","EUA|PAR","PAR|TUR","TUR|PAR","PAR|AUS","TUR|PAR","EUA|PAR","TUR|PAR"],
+        "Grupo E": ["ALE|EQU","ALE|CIV","ALE|EQU","ALE|CIV","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","EQU|ALE","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|CUR","ALE|CIV"],
+        "Grupo F": ["HOL|JAP","JAP|SUE","JAP|HOL","JAP|HOL","HOL|JAP","HOL|JAP","HOL|SUE","HOL|JAP","HOL|JAP","HOL|JAP","JAP|HOL","JAP|HOL","HOL|JAP","HOL|JAP","HOL|SUE","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP"],
+        "Grupo G": ["BEL|EGI","BEL|EGI","BEL|IRA","BEL|EGI","BEL|IRA","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|IRA","EGI|BEL","BEL|EGI","IRA|BEL","BEL|EGI","BEL|EGI","BEL|EGI"],
+        "Grupo H": ["ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU"],
+        "Grupo I": ["FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR","NOR|FRA","FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR","FRA|NOR","FRA|SEN","FRA|SEN","FRA|SEN","FRA|SEN","FRA|NOR","FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR"],
+        "Grupo J": ["ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|ALG","ARG|AUT","ARG|ALG","ARG|ALG","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|ALG","ARG|AUT"],
+        "Grupo K": ["POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","COL|POR","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|CON","POR|COL"],
+        "Grupo L": ["ING|CRO","ING|CRO","ING|CRO","ING|CRO","CRO|ING","CRO|ING","ING|CRO","ING|GAN","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","CRO|ING","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO"],
+        "3º Colocados": ["PAR|ESC|SUE|SEN|BOS|CON|IRA|ALG","COR|ESC|JOR|IRA|PAR|CON|BOS|PAN","SUE|EUA|AFS|ARA|ESC|ALG|NOR|EGI","SEN|EUA|ESC|BOS|ARA|TCH|IRA|ALG","MAR|PAR|SUE|AUT|SEN|ARA|BOS|GAN","TCH|TUR|PAN|IRA|ARA|NOR|ESC|CIV","SEN|MEX|BOS|CIV|AUS|AUT|ESC|JAP","CIV|CRO|ARA|ESC|SEN|AUT|COR|QAT","PAR|CIV|ESC|TCH|SUE|SEN|CON|PAN","GAN|SUE|ESC|BOS|AUS|TCH|SEN|CBV","NOR|BOS|ESC|SUE|ARA|ALG|PAN|CIV","TCH|EUA|ESC|GAN|CAN|CIV|SEN|CON","CIV|TCH|PAR|IRA|SEN|ALG|SUE|ESC","SUE|BOS|NOR|TUR|ESC|IRA|PAN|TCH","CIV|TCH|JAP|GAN|IRA|ESC|AUS|ARA","NOR|TUR|CIV|ALG|BOS|COR|ESC|SUE","IRA|AUS|TCH|CIV|PAN|ESC|CON|NOR","COR|GAN|CON|SEN|ESC|CIV|SUE|EUA","BOS|SUE|AFS|EGI|EUA|IRQ|ALG|CIV","SEN|GAN|CIV|TCH|SUE|ESC|IRA|CAN","TCH|AUS|IRA|CIV|IRQ|AUT|UZB|BOS","EUA|ESC|SEN|GAN|CON|COR|EQU|ARA"],
+      };
+      classData = classificados;
+      classCols = cols;
+      const nameRows = participants.map((name, pIndex) =>
+        `<tr><td class="name" data-participant="${pIndex}"><span class="name-label">${name}</span><span class="total-box" data-participant="${pIndex}">0</span></td></tr>`).join("");
+      const savedClassTeams = getClassTeamsStore();
+      const headerCells = cols.map(c => {
+        const isGrupo = c.startsWith("Grupo ");
+        const isThirds = c === "3º Colocados";
+        const slotCount = isThirds ? 8 : 2;
+        const letter = c.replace("Grupo ", "").trim();
+        let slotsHtml = "";
+        for (let s = 1; s <= slotCount; s++) {
+          const key = s === 1 ? c : c + "#" + s;
+          const val = (savedClassTeams[key] || "").replace(/"/g, "&quot;");
+          const hint = isGrupo ? s + letter : String(s);
+          slotsHtml +=
+            `<span class="fin-team-wrap"><input type="text" class="fin-team-input" data-col="${c}" data-slot="${s}" value="${val}" placeholder=" " ${adminMode ? "" : "disabled"}><span class="fin-team-hint">${hint}</span></span>`;
+        }
+        return `<th${isThirds ? ' class="fin-th--wide"' : ""}><div class="fin-head"><span class="fin-head-title">${c}</span><div class="fin-head-slots">${slotsHtml}</div></div></th>`;
+      }).join("");
+      const bodyRows = participants.map((name, pIndex) => {
+        return `<tr>${cols.map(col => {
+          const val = (classificados[col] && classificados[col][pIndex]) || "";
+          const display = val
+            ? val.split("|").map(s => `<span class="fin-sig">${s.trim()}</span>`).join('<span class="fin-sep"></span>')
+            : "";
+          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}"><span class="fin-pick"><span class="fin-flag"></span><span class="fin-name">${display}</span></span><span class="pts pts-hidden">&nbsp;</span></td>`;
+        }).join("")}</tr>`;
+      }).join("");
+      view.innerHTML = `
+        <div class="tab-main">
+          <div class="fin-status-bar"><span class="save-status" id="saveStatusClass"></span></div>
+          <div class="matches-grid">
+            <div class="board">
+              <table class="name-table">
+                <thead>
+                  <tr>
+                    <th class="name-col"><div class="name-col-inner"><span class="phase-label phase-label--static">Classificados</span></div></th>
+                  </tr>
+                </thead>
+                <tbody>${nameRows}</tbody>
+              </table>
+              <div class="scroll-area">
+                <table class="games-table fin-table">
+                  <thead><tr>${headerCells}</tr></thead>
+                  <tbody>${bodyRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    renderClassificados();
+    window.addEventListener("resize", syncClassificadosHeader);
+
+    // Salva o nome do time de cada coluna digitado pelo Admin (chave própria).
+    document.getElementById("viewClassificados").addEventListener("input", e => {
+      const input = e.target.closest(".fin-team-input");
+      if (!input) return;
+      if (!resultsData[CLASS_KEY] || typeof resultsData[CLASS_KEY] !== "object") {
+        resultsData[CLASS_KEY] = {};
+      }
+      const key = input.dataset.slot === "1" ? input.dataset.col : input.dataset.col + "#" + input.dataset.slot;
+      resultsData[CLASS_KEY][key] = input.value;
+      pendingKeys.add(CLASS_KEY);
+      updateTotals();
+      schedulePush();
+    });
+    updateClassificadosTotals();
+
+    // Em modo Admin, clicar no rótulo "Classificados" limpa os times digitados.
+    document.getElementById("viewClassificados").addEventListener("click", e => {
+      if (!adminMode) return;
+      if (!e.target.closest(".phase-label--static")) return;
+      document.querySelectorAll("#viewClassificados .fin-team-input").forEach(i => { i.value = ""; });
+      resultsData[CLASS_KEY] = {};
+      pendingKeys.add(CLASS_KEY);
       updateTotals();
       schedulePush();
     });
@@ -2675,6 +2937,136 @@
       updateFinSticky();
     });
 
+    // ---- Cabeçalho flutuante da aba Classificados (cópia independente) ----
+    var classStickyHead = null;
+    var classStickyScroll = null;
+
+    function teardownClassSticky() {
+      if (classStickyHead) {
+        classStickyHead.remove();
+        classStickyHead = null;
+        classStickyScroll = null;
+      }
+    }
+
+    function setupClassSticky() {
+      teardownClassSticky();
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) return;
+      const board = view.querySelector(".board");
+      const nameTable = view.querySelector(".name-table");
+      const finTable = view.querySelector(".fin-table");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board || !nameTable || !finTable || !realScroll) return;
+
+      classStickyHead = document.createElement("div");
+      classStickyHead.className = "sticky-head";
+      classStickyHead.style.transformOrigin = "top left";
+      classStickyHead.style.transform = "scale(" + (pageScale || 1) + ")";
+
+      const cloneBoard = document.createElement("div");
+      cloneBoard.className = "board";
+
+      const cloneNameTable = document.createElement("table");
+      cloneNameTable.className = "name-table";
+      cloneNameTable.appendChild(nameTable.querySelector("thead").cloneNode(true));
+
+      classStickyScroll = document.createElement("div");
+      classStickyScroll.className = "scroll-area";
+      const cloneFinTable = document.createElement("table");
+      cloneFinTable.className = finTable.className;
+      cloneFinTable.appendChild(finTable.querySelector("thead").cloneNode(true));
+      classStickyScroll.appendChild(cloneFinTable);
+
+      cloneBoard.appendChild(cloneNameTable);
+      cloneBoard.appendChild(classStickyScroll);
+      classStickyHead.appendChild(cloneBoard);
+      document.body.appendChild(classStickyHead);
+
+      classStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        cloneInput.disabled = !adminMode;
+        const col = cloneInput.dataset.col;
+        const slot = cloneInput.dataset.slot;
+        cloneInput.addEventListener("input", () => {
+          const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
+          if (real) {
+            real.value = cloneInput.value;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+      });
+
+      const clonePhase = classStickyHead.querySelector(".phase-label--static");
+      if (clonePhase) {
+        clonePhase.addEventListener("click", () => {
+          const real = view.querySelector(".phase-label--static");
+          if (real) real.click();
+        });
+      }
+
+      realScroll.addEventListener("scroll", () => {
+        if (classStickyScroll) classStickyScroll.scrollLeft = realScroll.scrollLeft;
+      });
+      classStickyScroll.addEventListener("scroll", () => {
+        realScroll.scrollLeft = classStickyScroll.scrollLeft;
+      });
+
+      updateClassStickyGeometry();
+      updateClassSticky();
+    }
+
+    function syncClassStickyInputs() {
+      if (!classStickyHead) return;
+      const view = document.getElementById("viewClassificados");
+      classStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        const col = cloneInput.dataset.col;
+        const slot = cloneInput.dataset.slot;
+        const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
+        if (real) cloneInput.value = real.value;
+      });
+    }
+
+    function updateClassStickyGeometry() {
+      if (!classStickyHead) return;
+      const view = document.getElementById("viewClassificados");
+      const board = view.querySelector(".board");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const s = pageScale || 1;
+      classStickyHead.style.left = rect.left + "px";
+      classStickyHead.style.width = (rect.width / s) + "px";
+      if (realScroll && classStickyScroll) {
+        classStickyScroll.scrollLeft = realScroll.scrollLeft;
+      }
+    }
+
+    function updateClassSticky() {
+      if (!classStickyHead) return;
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) { classStickyHead.classList.remove("visible"); return; }
+      const board = view.querySelector(".board");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const headH = (classStickyHead.offsetHeight || 0) * (pageScale || 1);
+      const shouldShow = rect.top < 0 && rect.bottom > headH + 4;
+      if (shouldShow) {
+        if (!classStickyHead.classList.contains("visible")) {
+          classStickyHead.classList.add("visible");
+          syncClassStickyInputs();
+        }
+        updateClassStickyGeometry();
+      } else {
+        classStickyHead.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", updateClassSticky, { passive: true });
+    window.addEventListener("resize", () => {
+      updateClassStickyGeometry();
+      updateClassSticky();
+    });
+
     function render() {
       const selected = dateInput.value;
       dateButton.textContent = formatDate(selected);
@@ -2685,6 +3077,7 @@
         noMatches.hidden = false;
         teardownStickyHeader();
         updateFinalistasTotals();
+        updateClassificadosTotals();
         return;
       }
       noMatches.hidden = true;
@@ -3016,6 +3409,7 @@
       paintTotals(Array.from(container.querySelectorAll(".total-box")), upToDate);
       // O Placar Geral é único: mantém os boxes da aba Finalistas em sincronia.
       updateFinalistasTotals();
+      updateClassificadosTotals();
     }
 
     dateInput.addEventListener("change", () => {
