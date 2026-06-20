@@ -160,7 +160,8 @@
     "status": "finished"
   },
   "2026-06-19|Brasil|Haiti": {
-    "h": "",
-    "a": "0"
+    "h": "0",
+    "a": "0",
+    "status": "live"
   }
 }
