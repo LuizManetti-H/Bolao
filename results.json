@@ -201,6 +201,7 @@
   },
   "2026-06-21|Uruguai|Cabo Verde": {
     "h": "2",
-    "a": "2"
+    "a": "2",
+    "status": "live"
   }
 }
