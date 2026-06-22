@@ -211,6 +211,7 @@
   },
   "2026-06-22|Argentina|Áustria": {
     "h": "0",
-    "a": ""
+    "a": "0",
+    "status": "live"
   }
 }
