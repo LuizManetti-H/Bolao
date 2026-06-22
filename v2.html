@@ -559,7 +559,8 @@
     }
     .fin-table .fin-cell .fin-flag img {
       height: 24px;
-      width: auto;
+      width: 36px;
+      object-fit: contain;
       display: block;
       border-radius: 2px;
     }
@@ -653,7 +654,8 @@
     }
     .fin-table thead th .fin-team-flag {
       height: 16px;
-      width: auto;
+      width: 24px;
+      object-fit: contain;
       border-radius: 2px;
       display: block;
       flex: none;
@@ -718,7 +720,8 @@
     }
     .group-picker-flag {
       height: 18px;
-      width: auto;
+      width: 27px;
+      object-fit: contain;
       border-radius: 2px;
       display: block;
     }
@@ -1092,7 +1095,8 @@
     /* Bandeira + sigla no mata-mata */
     .team-flag {
       height: 16px;
-      width: auto;
+      width: 24px;
+      object-fit: contain;
       display: block;
       border-radius: 2px;
     }
@@ -1277,6 +1281,7 @@
 
     .pts-pos { background: #dcfce7; color: #15803d; }
     .pts-one { background: #fef9c3; color: #a16207; }
+    .pts-two { background: #fed7aa; color: #b45309; }
     .pts-neg { background: #fee2e2; color: #b91c1c; }
     .pts-pen { background: #2563eb; color: #ffffff; }
     .pts-zero { background: #f1f5f9; color: #64748b; }
@@ -2347,7 +2352,7 @@
       if (p2 && p2 !== p1 && realSet.includes(p2)) correct++;
       if (correct === 2) {
         if (p1 === r1 && p2 === r2) return { points: 4, cls: "pts-pos" };
-        return { points: 2, cls: "pts-one" };
+        return { points: 2, cls: "pts-two" };
       }
       if (correct === 1) return { points: 1, cls: "pts-one" };
       return { points: -6, cls: "pts-neg" };
