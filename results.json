@@ -137,7 +137,9 @@
     "a": "1",
     "status": "finished"
   },
-  "__finalTeams": {},
+  "__finalTeams": {
+    "Campeão": "Brasil"
+  },
   "2026-06-18|Canadá|Catar": {
     "h": "6",
     "a": "0",
@@ -223,10 +225,5 @@
     "h": "1",
     "a": "0",
     "status": "live"
-  },
-  "2026-06-22|Jordânia|Argélia": {
-    "h": "",
-    "a": "",
-    "status": "finished"
   }
 }
