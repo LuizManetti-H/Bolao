@@ -17,8 +17,8 @@
       --border: #e2e8f0;
       --accent: #16a34a;
       --accent-soft: #dcfce7;
-      --header-grad-1: #1e3a8a;
-      --header-grad-2: #16a34a;
+      --header-grad-1: #009739;
+      --header-grad-2: #ffcc29;
     }
 
     * { box-sizing: border-box; }
@@ -88,7 +88,7 @@
 
     header {
       position: relative;
-      background: linear-gradient(120deg, var(--header-grad-1), var(--header-grad-2));
+      background: linear-gradient(90deg, #002776, #009739, #ffcc29);
       color: #fff;
       padding: 18px 24px 34px;
       text-align: center;
@@ -420,8 +420,21 @@
 
     header h1 {
       margin: 0;
-      font-size: 2rem;
+      font-size: 2.2rem;
       letter-spacing: 0.5px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      height: 44px;
+      width: auto;
+      display: block;
     }
 
     header .subtitle {
@@ -436,26 +449,289 @@
       margin: -18px auto 0;
       background: var(--card);
       border-radius: 14px;
-      height: 60px;
+      height: 50px;
       padding: 0 26px;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 12px;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
       position: relative;
     }
 
-    .intro p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.8rem;
-      text-align: center;
+    .intro-placar-btn {
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #14532d;
+      height: 30px;
+      padding: 0 22px;
+      min-width: 125px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 8px;
+      background: var(--header-grad-2);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .intro-placar-btn:hover {
+      background: #eab308;
+    }
+
+    .intro-placar-btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .intro-placar-btn.active {
+      background: #009739;
+      color: #fff;
+    }
+
+    .intro-placar-btn.active:hover {
+      background: #009739;
     }
 
     main {
       max-width: 1100px;
       margin: 0 auto;
       padding: 24px 24px 16px;
+    }
+
+    /* Wrapper das abas "Classificados" / "Finalistas" (mesmo recuo do main) */
+    .tab-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 24px 16px;
+    }
+
+    /* Rótulo "Finalistas" no topo da coluna de jogadores: não é clicável */
+    .phase-label.phase-label--static {
+      cursor: default;
+    }
+    .phase-label.phase-label--static.clickable {
+      cursor: pointer;
+    }
+
+    /* Cabeçalhos das colunas da Finalistas no mesmo tamanho de "Finalistas" */
+    .fin-table thead th {
+      font-size: 1rem;
+      width: 170px;
+    }
+    /* Colunas dos grupos A a L do Classificados mais estreitas */
+    #viewClassificados .fin-table thead th,
+    .sticky-head--class .fin-table thead th {
+      width: 125px;
+    }
+    /* Palpites dos jogadores alinhados à esquerda (lado esquerdo do box) */
+    #viewClassificados .fin-table .fin-cell {
+      text-align: left;
+    }
+    #viewClassificados .fin-table .fin-cell .fin-pick {
+      justify-content: flex-start;
+      margin-left: 3px;
+    }
+
+    /* Células de palpite da Finalistas (Campeão, Vice, 3º, 4º) */
+    .fin-table .fin-cell {
+      text-align: center;
+      font-weight: 600;
+      position: relative;
+    }
+    .fin-table .fin-cell .fin-pick {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .fin-table .fin-cell .fin-flag {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .fin-table .fin-cell .fin-flag:empty {
+      display: none;
+    }
+    .fin-table .fin-cell .fin-flag img {
+      height: 24px;
+      width: 36px;
+      object-fit: contain;
+      display: block;
+      border-radius: 2px;
+    }
+    .fin-table .fin-cell--brasil {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .fin-table thead th .fin-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .fin-table thead th .fin-team-input {
+      width: 100%;
+      box-sizing: border-box;
+      font: inherit;
+      font-size: 19px;
+      font-weight: 600;
+      text-align: center;
+      color: #0f172a;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 6px;
+    }
+    .fin-table thead th .fin-team-input::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    .fin-table thead th .fin-team-input:disabled {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      -webkit-text-fill-color: #fff;
+      opacity: 1;
+      border-color: rgba(255, 255, 255, 0.25);
+      cursor: default;
+    }
+    .fin-table thead th .fin-team-input:disabled::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+      -webkit-text-fill-color: rgba(255, 255, 255, 0.55);
+    }
+    /* Finalistas: campo vazio com mesma fonte/cor da marca "1A/1B" do Classificados */
+    #viewFinalistas .fin-team-input::placeholder {
+      font-weight: 600;
+    }
+    .fin-table thead th .fin-team-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+    /* Marca d'água "1A/2A" exibida ao fundo do campo enquanto estiver vazio */
+    .fin-table thead th .fin-team-wrap {
+      position: relative;
+      display: block;
+      width: 100%;
+    }
+    .fin-table thead th .fin-team-hint {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      font-size: 19px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .fin-table thead th .fin-team-input:placeholder-shown + .fin-team-hint {
+      display: flex;
+    }
+    .fin-table thead th .fin-team-input:disabled + .fin-team-hint {
+      color: rgba(255, 255, 255, 0.55);
+    }
+    /* Bandeira + sigla do time escolhido, exibidas dentro do box */
+    .fin-table thead th .fin-team-disp {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .fin-table thead th .fin-team-wrap.has-flag .fin-team-disp {
+      display: flex;
+    }
+    .fin-table thead th .fin-team-wrap.has-flag .fin-team-input {
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    .fin-table thead th .fin-team-flag {
+      height: 16px;
+      width: 24px;
+      object-fit: contain;
+      border-radius: 2px;
+      display: block;
+      flex: none;
+    }
+    .fin-table thead th .fin-team-sig {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      font-size: 19px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .fin-table thead th .fin-team-input:disabled ~ .fin-team-disp .fin-team-sig {
+      color: #fff;
+    }
+    .fin-table thead th .fin-head-slots {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    /* Coluna "3º Colocados": única mais larga, com 8 caixas em grade 4x2 */
+    .fin-table thead th.fin-th--wide {
+      min-width: 400px;
+    }
+    .fin-table thead th.fin-th--wide .fin-head-slots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    /* Lista de sele\u00e7\u00e3o de time (Admin) ao clicar num box de grupo */
+    .group-picker {
+      position: fixed;
+      z-index: 1000;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .group-picker-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 15px;
+      color: #0f172a;
+      text-align: left;
+      width: 100%;
+      white-space: nowrap;
+    }
+    .group-picker-opt:hover {
+      background: var(--accent-soft);
+    }
+    .group-picker-flag {
+      height: 18px;
+      width: 27px;
+      object-fit: contain;
+      border-radius: 2px;
+      display: block;
+    }
+    .group-picker-sig {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      font-weight: 700;
+      min-width: 3ch;
+    }
+    .group-picker-name {
+      color: #475569;
     }
 
     .matches-grid {
@@ -725,6 +1001,27 @@
     .save-status.saved { color: #15803d; }
     .save-status.error { color: #b91c1c; }
 
+    .fin-status-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      min-height: 1.2rem;
+      margin-bottom: 6px;
+    }
+    .fin-status-bar .save-status { margin-left: 0; }
+
+    /* Sobe toda a tabela de Finalistas (cabeçalhos + corpo) 20px para cima */
+    #viewFinalistas .tab-main {
+      padding-top: 4px;
+      margin-top: -10px;
+    }
+
+    /* Mesma subida da tabela no modo Classificados */
+    #viewClassificados .tab-main {
+      padding-top: 4px;
+      margin-top: -10px;
+    }
+
     .date-button {
       font: inherit;
       font-weight: 600;
@@ -798,7 +1095,8 @@
     /* Bandeira + sigla no mata-mata */
     .team-flag {
       height: 16px;
-      width: auto;
+      width: 24px;
+      object-fit: contain;
       display: block;
       border-radius: 2px;
     }
@@ -808,6 +1106,26 @@
     .team-sigla {
       font-family: "Red Hat Mono", ui-monospace, monospace;
       line-height: 1;
+    }
+
+    /* Palpites dos jogadores no modo "Classificados" também em Red Hat Mono */
+    #viewClassificados .fin-name {
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    #viewClassificados .fin-sig {
+      line-height: 1;
+    }
+    /* "|" desenhado para ficar perfeitamente centralizado com as siglas */
+    #viewClassificados .fin-sep {
+      display: inline-block;
+      width: 2px;
+      height: 0.92em;
+      background: currentColor;
+      border-radius: 1px;
+      opacity: 0.55;
     }
 
     .games-table.wide-cols .match-teams .team {
@@ -901,6 +1219,8 @@
     tbody tr:nth-child(even) .name { background: #f1f3f5; }
     tbody tr:hover td,
     tbody tr:hover .name { background: var(--accent-soft); }
+    /* Realce da linha inteira (nome + palpites), mesmo em tabelas separadas. */
+    td.row-hl { background: var(--accent-soft) !important; }
 
     .name {
       font-weight: 600;
@@ -939,6 +1259,12 @@
       font-size: 0.80rem;
     }
 
+    .score .pred .pred-pen {
+      font-size: 0.78rem;
+      color: #ea7317;
+      margin: 0 4px;
+    }
+
     .pts {
       display: inline-block;
       min-width: 24px;
@@ -955,7 +1281,9 @@
 
     .pts-pos { background: #dcfce7; color: #15803d; }
     .pts-one { background: #fef9c3; color: #a16207; }
+    .pts-two { background: #fed7aa; color: #b45309; }
     .pts-neg { background: #fee2e2; color: #b91c1c; }
+    .pts-pen { background: #2563eb; color: #ffffff; }
     .pts-zero { background: #f1f5f9; color: #64748b; }
     .pts-hidden { background: transparent; }
 
@@ -1109,9 +1437,26 @@
         padding-right: 0;
       }
 
+      .tab-main {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
       .match-date {
         padding-left: 5px;
         padding-right: 5px;
+      }
+
+      .intro {
+        padding: 0 8px;
+        gap: 6px;
+      }
+
+      .intro-placar-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 0 4px;
+        font-size: 0.72rem;
       }
     }
   </style>
@@ -1125,35 +1470,44 @@
       <button type="button" id="scalePlus" aria-label="Aumentar escala">+</button>
     </div>
     <button type="button" class="admin-button" id="adminButton">Admin</button>
-    <h1>Bolão</h1>
+    <div class="brand">
+      <img class="brand-logo" src="flags/FWC26.png" alt="FWC26">
+      <h1>Bolão</h1>
+      <img class="brand-logo" src="flags/CBF.png" alt="CBF">
+    </div>
     <p class="subtitle">Copa do Mundo FIFA 2026</p>
   </header>
 
   <section class="intro">
-    <p>
-      Altere a data para visualizar os jogos de outros dias.<br>
-      Clique em "Placar Geral" para ver o ranking.
-    </p>
+    <button type="button" class="intro-placar-btn" id="introJogosBtn">Jogos</button>
+    <button type="button" class="intro-placar-btn" id="introClassificadosBtn">Classificados</button>
+    <button type="button" class="intro-placar-btn" id="introFinalistasBtn">Finalistas</button>
+    <button type="button" class="intro-placar-btn" id="introPlacarBtn">Placar Geral</button>
   </section>
 
-  <div class="match-date">
-    <div class="date-picker">
-      <button type="button" class="date-button" id="dateButton"></button>
-      <input
-        type="date"
-        id="matchDate"
-        value="2026-06-11"
-        min="2026-06-11"
-        max="2026-07-19"
-      />
+  <div class="tab-view" id="viewJogos">
+    <div class="match-date">
+      <div class="date-picker">
+        <button type="button" class="date-button" id="dateButton"></button>
+        <input
+          type="date"
+          id="matchDate"
+          value="2026-06-11"
+          min="2026-06-11"
+          max="2026-07-19"
+        />
+      </div>
+      <span class="save-status" id="saveStatus"></span>
     </div>
-    <span class="save-status" id="saveStatus"></span>
+
+    <main>
+      <div class="matches-grid" id="matches"></div>
+      <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
+    </main>
   </div>
 
-  <main>
-    <div class="matches-grid" id="matches"></div>
-    <p class="no-matches" id="noMatches" hidden>Nenhum jogo nesta data.</p>
-  </main>
+  <div class="tab-view" id="viewClassificados" hidden></div>
+  <div class="tab-view" id="viewFinalistas" hidden></div>
 
   <footer>Bolão · Copa do Mundo FIFA 2026 · v2.0</footer>
   </div>
@@ -1229,6 +1583,40 @@
     const SCALE_STEP = 0.1;
     let pageScale = parseFloat(localStorage.getItem("bolaoScale")) || 1;
 
+    // Ajusta o tamanho da fonte dos botões da intro para que o texto preencha
+    // a maior parte do botão e nunca ultrapasse a largura/altura dele, em
+    // qualquer nível de zoom. Usa um font-size único (baseado no rótulo mais
+    // largo e no botão mais estreito) para manter os 4 botões uniformes.
+    const introFitButtons = Array.from(document.querySelectorAll(".intro-placar-btn"));
+    const introFitContainer = document.querySelector(".intro");
+    const introFitCanvas = document.createElement("canvas");
+    const introFitCtx = introFitCanvas.getContext("2d");
+    function fitIntroButtons() {
+      if (!introFitButtons.length || !introFitContainer) return;
+      const cs = getComputedStyle(introFitButtons[0]);
+      introFitCtx.font = cs.fontWeight + " 100px " + cs.fontFamily;
+      const padTop = parseFloat(cs.paddingTop);
+      const padBottom = parseFloat(cs.paddingBottom);
+      let minAvailW = Infinity;
+      let maxTextW = 0;
+      introFitButtons.forEach(btn => {
+        const s = getComputedStyle(btn);
+        const availW = btn.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+        if (availW < minAvailW) minAvailW = availW;
+        const tw = introFitCtx.measureText(btn.textContent.trim()).width;
+        if (tw > maxTextW) maxTextW = tw;
+      });
+      if (maxTextW <= 0 || !isFinite(minAvailW)) return;
+      const WIDTH_FILL = 0.88;   // o texto ocupa ~88% da largura do botão
+      const HEIGHT_FILL = 0.80;  // limite pela altura para não estourar verticalmente
+      const btnH = introFitButtons[0].clientHeight;
+      const availH = btnH - padTop - padBottom;
+      const fsByWidth = (minAvailW * WIDTH_FILL) / (maxTextW / 100);
+      const fsByHeight = availH * HEIGHT_FILL;
+      const fs = Math.max(8, Math.min(fsByWidth, fsByHeight));
+      introFitButtons.forEach(btn => { btn.style.fontSize = fs + "px"; });
+    }
+
     function applyScale() {
       pageScale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, Math.round(pageScale * 100) / 100));
       zoomWrap.style.transformOrigin = "top left";
@@ -1260,6 +1648,17 @@
         document.body.style.height = (zoomWrap.offsetHeight * pageScale) + "px";
         if (typeof updateStickyGeometry === "function") updateStickyGeometry();
         if (typeof updateStickyHeader === "function") updateStickyHeader();
+        if (typeof finStickyHead !== "undefined" && finStickyHead) {
+          finStickyHead.style.transform = "scale(" + pageScale + ")";
+          updateFinStickyGeometry();
+          updateFinSticky();
+        }
+        if (typeof classStickyHead !== "undefined" && classStickyHead) {
+          classStickyHead.style.transform = "scale(" + pageScale + ")";
+          updateClassStickyGeometry();
+          updateClassSticky();
+        }
+        fitIntroButtons();
       });
     }
 
@@ -1271,6 +1670,8 @@
       pageScale += SCALE_STEP;
       applyScale();
     });
+
+    window.addEventListener("resize", fitIntroButtons);
 
     const weekdays = [
       "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
@@ -1345,8 +1746,14 @@
       adminButton.classList.toggle("active", on);
       container.classList.toggle("admin-mode", on);
       updateResultBoxesEditable();
+      document.querySelectorAll(".fin-team-input").forEach(i => { i.disabled = !on; });
+      document.querySelectorAll("#viewFinalistas .phase-label--static, #viewClassificados .phase-label--static").forEach(el => el.classList.toggle("clickable", on));
       setSaveStatus("");
       if (container.querySelector(".board")) setupStickyHeader();
+      const finView = document.getElementById("viewFinalistas");
+      if (finView && !finView.hidden) setupFinSticky();
+      const clsView = document.getElementById("viewClassificados");
+      if (clsView && !clsView.hidden) setupClassSticky();
     }
 
     // ---- Persistência dos placares (GitHub) ----
@@ -1384,7 +1791,7 @@
     const TEAM_INFO = {
       "África do Sul": ["AFS", "AFS - Africa do Sul.png"],
       "Alemanha": ["ALE", "ALE - Alemanha.png"],
-      "Argélia": ["ALG", "ALG - Argelia.png"],
+      "Argélia": ["AGL", "ALG - Argelia.png"],
       "Arábia Saudita": ["ARA", "ARA - Arabia Saudita.png"],
       "Argentina": ["ARG", "ARG - Argentina.png"],
       "Austrália": ["AUS", "AUS - Australia.png"],
@@ -1395,7 +1802,8 @@
       "Brasil": ["BRA", "BRA - Brasil.png"],
       "Canadá": ["CAN", "CAN - Canada.png"],
       "Congo (RD)": ["CON", "CDR - Congo.png"],
-      "Costa do Marfim": ["CIV", "CIV - Costa do Marfim.png"],
+      "Congo": ["CON", "CDR - Congo.png"],
+      "Costa do Marfim": ["CDM", "CIV - Costa do Marfim.png"],
       "Colômbia": ["COL", "COL - Colombia.png"],
       "Coreia do Sul": ["COR", "COR - Coreia.png"],
       "Croácia": ["CRO", "CRO - Croacia.png"],
@@ -1604,12 +2012,21 @@
       return false;
     }
 
+    let savedHideTimer = null;
     function setSaveStatus(state) {
-      if (!saveStatus) return;
-      if (!adminMode || !state) { saveStatus.textContent = ""; saveStatus.className = "save-status"; return; }
+      const els = document.querySelectorAll(".save-status");
+      if (!els.length) return;
       const map = { saving: "Salvando…", saved: "Salvo ✓", error: "Erro ao salvar" };
-      saveStatus.textContent = map[state] || "";
-      saveStatus.className = "save-status " + state;
+      if (savedHideTimer) { clearTimeout(savedHideTimer); savedHideTimer = null; }
+      els.forEach(el => {
+        if (!adminMode || !state) { el.textContent = ""; el.className = "save-status"; return; }
+        el.textContent = map[state] || "";
+        el.className = "save-status " + state;
+      });
+      // A confirmação "Salvo ✓" some sozinha após 5 segundos.
+      if (adminMode && state === "saved") {
+        savedHideTimer = setTimeout(() => { setSaveStatus(""); }, 5000);
+      }
     }
 
     function updateResultBoxesEditable() {
@@ -1699,7 +2116,7 @@
 
     function openRanking() {
       const rows = participants
-        .map((name, i) => ({ name, pts: computeParticipantTotal(i) }))
+        .map((name, i) => ({ name, pts: computeParticipantGrandTotal(i, dateInput.value) }))
         .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, "pt-BR"));
 
       let lastPts = null;
@@ -1823,6 +2240,676 @@
       else if (e.target.closest(".phase-label")) openResults();
     });
 
+    // Botão "Placar Geral" da seção de introdução abre o ranking
+    const introPlacarBtn = document.getElementById("introPlacarBtn");
+    if (introPlacarBtn) {
+      introPlacarBtn.addEventListener("click", openRanking);
+    }
+
+    // Abas "Jogos" / "Classificados" / "Finalistas": alternam o conteúdo
+    // exibido abaixo do box de introdução.
+    const tabButtons = [
+      { btn: document.getElementById("introJogosBtn"), view: "viewJogos" },
+      { btn: document.getElementById("introClassificadosBtn"), view: "viewClassificados" },
+      { btn: document.getElementById("introFinalistasBtn"), view: "viewFinalistas" },
+    ];
+    function selectTab(viewId) {
+      tabButtons.forEach(t => {
+        if (!t.btn) return;
+        const isActive = t.view === viewId;
+        t.btn.classList.toggle("active", isActive);
+        const view = document.getElementById(t.view);
+        if (view) view.hidden = !isActive;
+      });
+      if (viewId === "viewFinalistas") {
+        requestAnimationFrame(() => { syncFinalistasHeader(); setupFinSticky(); });
+        updateFinalistasTotals();
+      } else {
+        teardownFinSticky();
+      }
+      if (viewId === "viewClassificados") {
+        requestAnimationFrame(() => { syncClassificadosHeader(); setupClassSticky(); });
+        updateClassificadosTotals();
+      } else {
+        teardownClassSticky();
+      }
+      if (viewId === "viewJogos") {
+        requestAnimationFrame(syncBoardHeights);
+      }
+    }
+    tabButtons.forEach(t => {
+      if (t.btn) t.btn.addEventListener("click", () => selectTab(t.view));
+    });
+
+    // Iguala a altura dos cabeçalhos da coluna de nomes e das colunas de palpite.
+    function syncFinalistasHeader() {
+      const view = document.getElementById("viewFinalistas");
+      if (!view || view.hidden) return;
+      const nameHead = view.querySelector(".name-table thead th");
+      const gamesThs = view.querySelectorAll(".games-table thead th");
+      const gamesHeadRow = view.querySelector(".games-table thead tr");
+      if (!nameHead || !gamesThs.length || !gamesHeadRow) return;
+      const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+      // Zera para medir as alturas naturais de cada cabeçalho.
+      nameHead.style.height = "auto";
+      gamesThs.forEach(th => { th.style.height = "auto"; });
+      const nameH = nameHead.getBoundingClientRect().height / s;
+      const gamesH = gamesHeadRow.getBoundingClientRect().height / s;
+      // Aplica a maior altura aos dois lados para que fiquem iguais.
+      const maxH = Math.max(nameH, gamesH);
+      nameHead.style.height = maxH + "px";
+      gamesThs.forEach(th => { th.style.height = maxH + "px"; });
+    }
+
+    // Pontuação dos Finalistas por coluna e placar geral de cada jogador.
+    const FIN_POINTS = { "Campeão": 20, "Vice-campeão": 15, "3º Lugar": 10, "4º Lugar": 10 };
+    // Os times finalistas (Campeão, Vice, 3º, 4º) são gravados no mesmo
+    // results.json do GitHub, sob esta chave reservada (não colide com jogos).
+    const FINALS_KEY = "__finalTeams";
+    let finalistsData = {};
+    let finalCols = [];
+    // Times finalistas publicados no GitHub (dentro de resultsData).
+    function getFinalTeamsStore() {
+      const v = resultsData[FINALS_KEY];
+      return (v && typeof v === "object") ? v : {};
+    }
+    // Reflete nos campos da coluna os times vindos do GitHub, sem sobrescrever
+    // o campo que o Admin estiver editando no momento.
+    function applyFinalTeamsToInputs() {
+      const store = getFinalTeamsStore();
+      document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => {
+        if (i === document.activeElement) return;
+        i.value = store[i.dataset.col] || "";
+      });
+    }
+    function getFinalActualTeams() {
+      const saved = { ...getFinalTeamsStore() };
+      document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => {
+        saved[i.dataset.col] = i.value;
+      });
+      return saved;
+    }
+    function computeFinalistaTotal(pIndex, actual) {
+      let total = 0;
+      finalCols.forEach(col => {
+        const real = (actual[col] || "").trim().toLowerCase();
+        if (!real) return;
+        const pick = ((finalistsData[col] && finalistsData[col][pIndex]) || "").trim().toLowerCase();
+        if (pick && pick === real) total += FIN_POINTS[col] || 0;
+      });
+      return total;
+    }
+    // Pontuação adicional dos Classificados.
+    // Grupo (A-L): 1 acerto = +1; 2 acertos fora de ordem = +2;
+    // 2 acertos na ordem = +4; nenhum acerto = -6 (penalidade).
+    function classGroupScore(pickArr, realArr) {
+      const r1 = realArr[0] || "", r2 = realArr[1] || "";
+      if (!r1 || !r2) return null; // resultado do grupo ainda não definido
+      const p1 = pickArr[0] || "", p2 = pickArr[1] || "";
+      const realSet = [r1, r2];
+      let correct = 0;
+      if (p1 && realSet.includes(p1)) correct++;
+      if (p2 && p2 !== p1 && realSet.includes(p2)) correct++;
+      if (correct === 2) {
+        if (p1 === r1 && p2 === r2) return { points: 4, cls: "pts-pos" };
+        return { points: 2, cls: "pts-two" };
+      }
+      if (correct === 1) return { points: 1, cls: "pts-one" };
+      return { points: -6, cls: "pts-neg" };
+    }
+    // 3º colocados: +1 por equipe acertada (independente do lugar), somados.
+    function classThirdsScore(pickArr, realArr) {
+      const reals = realArr.map(v => v || "").filter(Boolean);
+      if (!reals.length) return null;
+      const seen = new Set();
+      let count = 0;
+      pickArr.forEach(p => {
+        if (p && !seen.has(p) && reals.includes(p)) { count++; seen.add(p); }
+      });
+      if (count === 0) return { points: 0, cls: "pts-hidden", hidden: true };
+      return { points: count, cls: "pts-pos" };
+    }
+    function computeClassificadosTotal(pIndex, actual) {
+      let total = 0;
+      classCols.forEach(col => {
+        const pickName = (classData[col] && classData[col][pIndex]) || "";
+        const pickArr = pickName.split("|").map(s => s.trim().toLowerCase());
+        const realArr = (actual[col] || []).map(v => (v || "").trim().toLowerCase());
+        const sc = col === "3º Colocados"
+          ? classThirdsScore(pickArr, realArr)
+          : classGroupScore(pickArr, realArr);
+        if (sc && !sc.hidden) total += sc.points;
+      });
+      return total;
+    }
+    // Placar Geral único do jogador: Jogos + Finalistas + Classificados.
+    function computeParticipantGrandTotal(pIndex, upToDate) {
+      let classPts = 0;
+      // Os dados/constantes do Classificados são declarados mais abaixo; durante
+      // a inicialização esta função pode ser chamada antes disso (TDZ).
+      try { classPts = computeClassificadosTotal(pIndex, getClassActualTeams()); } catch (e) { classPts = 0; }
+      return computeParticipantTotal(pIndex, upToDate)
+        + computeFinalistaTotal(pIndex, getFinalActualTeams())
+        + classPts;
+    }
+    // Há ao menos um resultado lançado (placar de jogo ou time finalista definido)?
+    function hasAnyResultOverall(upToDate) {
+      const gamesHas = games.some(g => {
+        if (upToDate && g.d > upToDate) return false;
+        const r = resultsData[gameKey(g)];
+        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+      });
+      const actual = getFinalActualTeams();
+      const finHas = finalCols.some(col => (actual[col] || "").trim() !== "");
+      return gamesHas || finHas;
+    }
+    // Preenche um conjunto de total-box com o Placar Geral e as cores de ranking.
+    // totalFn opcional permite calcular um placar específico (ex.: só Classificados).
+    function paintTotals(boxes, upToDate, totalFn) {
+      const fn = totalFn || computeParticipantGrandTotal;
+      const totals = boxes.map(box => fn(parseInt(box.dataset.participant, 10), upToDate));
+      const hasAnyResult = hasAnyResultOverall(upToDate);
+      const distinct = [...new Set(totals)].sort((a, b) => b - a);
+      const first = distinct[0], second = distinct[1], third = distinct[2];
+      boxes.forEach((box, i) => {
+        const total = totals[i];
+        box.textContent = total;
+        let rank = "rank-none";
+        if (hasAnyResult) {
+          if (total === first) rank = "rank-1";
+          else if (total === second) rank = "rank-2";
+          else if (total === third) rank = "rank-3";
+        }
+        box.className = "total-box " + rank;
+      });
+    }
+    function updateFinalistasTotals() {
+      const view = document.getElementById("viewFinalistas");
+      if (!view) return;
+      // Sincroniza os campos da coluna com os times publicados no GitHub.
+      applyFinalTeamsToInputs();
+      // Placar exibido nesta aba: apenas os pontos do modo Finalistas.
+      const totalBoxes = Array.from(view.querySelectorAll(".total-box"));
+      paintTotals(
+        totalBoxes,
+        dateInput.value,
+        (pIndex) => computeFinalistaTotal(pIndex, getFinalActualTeams())
+      );
+      // Score zero sempre com fundo branco e fonte preta.
+      totalBoxes.forEach(box => {
+        if (parseInt(box.textContent, 10) === 0) box.className = "total-box rank-none";
+      });
+      // Selo de pontos (+20 / +15 / +10) em cada palpite certo.
+      const actual = getFinalActualTeams();
+      view.querySelectorAll(".fin-cell").forEach(cell => {
+        const span = cell.querySelector(".pts");
+        if (!span) return;
+        const col = cell.dataset.col;
+        const real = (actual[col] || "").trim().toLowerCase();
+        const pickName = (finalistsData[col] && finalistsData[col][parseInt(cell.dataset.participant, 10)]) || "";
+        const pick = pickName.trim().toLowerCase();
+        const flagSlot = cell.querySelector(".fin-flag");
+        if (real && pick && real === pick) {
+          span.textContent = "+" + (FIN_POINTS[col] || 0);
+          span.className = "pts pts-pos";
+          const info = TEAM_INFO[pickName];
+          if (flagSlot) {
+            flagSlot.innerHTML = info
+              ? `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${pickName}">`
+              : "";
+          }
+        } else {
+          span.innerHTML = "&nbsp;";
+          span.className = "pts pts-hidden";
+          if (flagSlot) flagSlot.innerHTML = "";
+        }
+      });
+    }
+    function renderFinalistas() {
+      const view = document.getElementById("viewFinalistas");
+      if (!view) return;
+      const cols = ["Campeão", "Vice-campeão", "3º Lugar", "4º Lugar"];
+      // extraídos de "Classificados-Finalistas.csv".
+      const finalists = {
+        "Campeão": ["Espanha","Portugal","França","Brasil","Espanha","Portugal","França","Brasil","Brasil","Espanha","Espanha","Portugal","Espanha","Brasil","Espanha","França","Brasil","Brasil","Brasil","Portugal","França","Brasil"],
+        "Vice-campeão": ["Brasil","Espanha","Portugal","França","Argentina","França","Argentina","Espanha","Espanha","Brasil","Brasil","França","Portugal","Espanha","Brasil","Brasil","França","França","França","França","Argentina","França"],
+        "3º Lugar": ["França","Brasil","Espanha","Argentina","França","Inglaterra","Brasil","Portugal","França","França","Portugal","Espanha","França","França","França","Espanha","Portugal","Espanha","Espanha","Brasil","Inglaterra","Portugal"],
+        "4º Lugar": ["Portugal","Alemanha","Brasil","Portugal","México","Brasil","Espanha","Noruega","Portugal","Colômbia","França","Brasil","Brasil","Argentina","Portugal","Argentina","Espanha","Portugal","Argentina","Espanha","Espanha","Espanha"],
+      };
+      finalistsData = finalists;
+      finalCols = cols;
+      const nameRows = participants.map((name, pIndex) =>
+        `<tr><td class="name" data-participant="${pIndex}"><span class="name-label">${name}</span><span class="total-box" data-participant="${pIndex}">0</span></td></tr>`).join("");
+      const savedFinalTeams = getFinalTeamsStore();
+      const FINAL_PLACEHOLDER = { "Campeão": "W104", "Vice-campeão": "L104", "3º Lugar": "W103", "4º Lugar": "L103" };
+      const headerCells = cols.map(c => {
+        const val = (savedFinalTeams[c] || "").replace(/"/g, "&quot;");
+        return `<th><div class="fin-head"><span class="fin-head-title">${c}</span>` +
+          `<input type="text" class="fin-team-input" data-col="${c}" value="${val}" placeholder="${FINAL_PLACEHOLDER[c] || ""}" ${adminMode ? "" : "disabled"}></div></th>`;
+      }).join("");
+      const bodyRows = participants.map((name, pIndex) => {
+        return `<tr>${cols.map(col => {
+          const val = (finalists[col] && finalists[col][pIndex]) || "";
+          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}"><span class="fin-pick"><span class="fin-flag"></span><span class="fin-name">${val}</span></span><span class="pts pts-hidden">&nbsp;</span></td>`;
+        }).join("")}</tr>`;
+      }).join("");
+      view.innerHTML = `
+        <div class="tab-main">
+          <div class="fin-status-bar"><span class="save-status" id="saveStatusFin"></span></div>
+          <div class="matches-grid">
+            <div class="board">
+              <table class="name-table">
+                <thead>
+                  <tr>
+                    <th class="name-col"><div class="name-col-inner"><span class="phase-label phase-label--static">Finalistas</span></div></th>
+                  </tr>
+                </thead>
+                <tbody>${nameRows}</tbody>
+              </table>
+              <div class="scroll-area">
+                <table class="games-table fin-table">
+                  <thead><tr>${headerCells}</tr></thead>
+                  <tbody>${bodyRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    renderFinalistas();
+    window.addEventListener("resize", syncFinalistasHeader);
+
+    // Salva o nome do time de cada coluna (Campeão, Vice, 3º, 4º) digitado pelo
+    // Admin, gravando no GitHub junto dos placares dos jogos.
+    document.getElementById("viewFinalistas").addEventListener("input", e => {
+      const input = e.target.closest(".fin-team-input");
+      if (!input) return;
+      if (!resultsData[FINALS_KEY] || typeof resultsData[FINALS_KEY] !== "object") {
+        resultsData[FINALS_KEY] = {};
+      }
+      resultsData[FINALS_KEY][input.dataset.col] = input.value;
+      pendingKeys.add(FINALS_KEY);
+      // Placar Geral único: atualiza tanto Finalistas quanto Jogos.
+      updateTotals();
+      schedulePush();
+    });
+    updateFinalistasTotals();
+
+    // Em modo Admin, clicar no rótulo "Finalistas" limpa os times digitados.
+    document.getElementById("viewFinalistas").addEventListener("click", e => {
+      if (!adminMode) return;
+      if (!e.target.closest(".phase-label--static")) return;
+      document.querySelectorAll("#viewFinalistas .fin-team-input").forEach(i => { i.value = ""; });
+      resultsData[FINALS_KEY] = {};
+      pendingKeys.add(FINALS_KEY);
+      updateTotals();
+      schedulePush();
+    });
+
+    // =====================================================================
+    // Modo "Classificados" — cópia independente do modo "Finalistas".
+    // Mantém código próprio (dados, chave de storage, render, totais e
+    // cabeçalho flutuante) para que mudanças aqui não afetem o Finalistas.
+    // Reaproveita apenas as classes visuais (.fin-*) para a cópia fiel.
+    // =====================================================================
+    const CLASS_POINTS = { "Grupo A": 20, "Grupo B": 15, "Grupo C": 10, "Grupo D": 10, "Grupo E": 10, "Grupo F": 10, "Grupo G": 10, "Grupo H": 10, "Grupo I": 10, "Grupo J": 10, "Grupo K": 10, "Grupo L": 10, "3º Colocados": 10 };
+    // Times de cada grupo (de Grupos.csv) usados na seleção do Admin nos boxes.
+    const CLASS_GROUPS = {
+      "Grupo A": ["México", "Coreia do Sul", "África do Sul", "Rep. Tcheca"],
+      "Grupo B": ["Canadá", "Catar", "Bósnia", "Suiça"],
+      "Grupo C": ["Brasil", "Haiti", "Marrocos", "Escócia"],
+      "Grupo D": ["Estados Unidos", "Austrália", "Paraguai", "Turquia"],
+      "Grupo E": ["Alemanha", "Costa do Marfim", "Curaçao", "Equador"],
+      "Grupo F": ["Holanda", "Suécia", "Japão", "Tunísia"],
+      "Grupo G": ["Bélgica", "Irã", "Egito", "Nova Zelândia"],
+      "Grupo H": ["Espanha", "Arábia Saudita", "Cabo Verde", "Uruguai"],
+      "Grupo I": ["França", "Iraque", "Senegal", "Noruega"],
+      "Grupo J": ["Argentina", "Áustria", "Argélia", "Jordânia"],
+      "Grupo K": ["Portugal", "Uzbequistão", "Congo", "Colômbia"],
+      "Grupo L": ["Inglaterra", "Gana", "Croácia", "Panamá"],
+    };
+    // Times "reais" do Classificados, gravados no GitHub sob chave própria.
+    const CLASS_KEY = "__classTeams";
+    let classData = {};
+    let classCols = [];
+    function getClassTeamsStore() {
+      const v = resultsData[CLASS_KEY];
+      return (v && typeof v === "object") ? v : {};
+    }
+    function applyClassTeamsToInputs() {
+      const store = getClassTeamsStore();
+      document.querySelectorAll("#viewClassificados .fin-team-input").forEach(i => {
+        if (i === document.activeElement) return;
+        const key = i.dataset.slot === "1" ? i.dataset.col : i.dataset.col + "#" + i.dataset.slot;
+        i.value = store[key] || "";
+        updateGroupBoxFlag(i);
+      });
+    }
+    // Mostra a bandeira + sigla do time escolhido dentro do box do grupo.
+    function updateGroupBoxFlag(input) {
+      if (!input) return;
+      const wrap = input.closest(".fin-team-wrap");
+      if (!wrap) return;
+      const disp = wrap.querySelector(".fin-team-disp");
+      if (!disp) return;
+      // Grupos: usa os 4 times do grupo. 3º Colocados: usa todos os times.
+      const teams = CLASS_GROUPS[input.dataset.col] || Object.values(CLASS_GROUPS).flat();
+      const sig = (input.value || "").trim();
+      let file = null;
+      if (teams && sig) {
+        for (const name of teams) {
+          const info = TEAM_INFO[name];
+          if (info && info[0].toUpperCase() === sig.toUpperCase()) { file = info[1]; break; }
+        }
+      }
+      if (file) {
+        const flag = disp.querySelector(".fin-team-flag");
+        const sigEl = disp.querySelector(".fin-team-sig");
+        if (flag) flag.src = FLAGS_DIR + encodeURIComponent(file);
+        if (sigEl) sigEl.textContent = sig;
+        wrap.classList.add("has-flag");
+      } else {
+        wrap.classList.remove("has-flag");
+      }
+    }
+    function getClassActualTeams() {
+      const store = getClassTeamsStore();
+      const map = {};
+      // Reúne todos os campos (2 por coluna; 8 na coluna "3º Colocados").
+      document.querySelectorAll("#viewClassificados .fin-team-input").forEach(i => {
+        const col = i.dataset.col;
+        const idx = parseInt(i.dataset.slot, 10) - 1;
+        const key = i.dataset.slot === "1" ? col : col + "#" + i.dataset.slot;
+        if (!map[col]) map[col] = [];
+        map[col][idx] = i.value || store[key] || "";
+      });
+      return map;
+    }
+    // Iguala a altura dos cabeçalhos da coluna de nomes e das colunas de palpite.
+    function syncClassificadosHeader() {
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) return;
+      const nameHead = view.querySelector(".name-table thead th");
+      const gamesThs = view.querySelectorAll(".games-table thead th");
+      const gamesHeadRow = view.querySelector(".games-table thead tr");
+      if (!nameHead || !gamesThs.length || !gamesHeadRow) return;
+      const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+      nameHead.style.height = "auto";
+      gamesThs.forEach(th => { th.style.height = "auto"; });
+      const nameH = nameHead.getBoundingClientRect().height / s;
+      const gamesH = gamesHeadRow.getBoundingClientRect().height / s;
+      const maxH = Math.max(nameH, gamesH);
+      nameHead.style.height = maxH + "px";
+      gamesThs.forEach(th => { th.style.height = maxH + "px"; });
+    }
+    function updateClassificadosTotals() {
+      const view = document.getElementById("viewClassificados");
+      if (!view) return;
+      applyClassTeamsToInputs();
+      // Placar exibido nesta aba: apenas os pontos do modo Classificados.
+      const totalBoxes = Array.from(view.querySelectorAll(".total-box"));
+      paintTotals(
+        totalBoxes,
+        dateInput.value,
+        (pIndex) => computeClassificadosTotal(pIndex, getClassActualTeams())
+      );
+      // Score zero sempre com fundo branco e fonte preta.
+      totalBoxes.forEach(box => {
+        if (parseInt(box.textContent, 10) === 0) box.className = "total-box rank-none";
+      });
+      const actual = getClassActualTeams();
+      view.querySelectorAll(".fin-cell").forEach(cell => {
+        const span = cell.querySelector(".pts");
+        if (!span) return;
+        const col = cell.dataset.col;
+        const pIndex = parseInt(cell.dataset.participant, 10);
+        const pickName = (classData[col] && classData[col][pIndex]) || "";
+        const pickArr = pickName.split("|").map(s => s.trim().toLowerCase());
+        const realArr = (actual[col] || []).map(v => (v || "").trim().toLowerCase());
+        const sc = col === "3º Colocados"
+          ? classThirdsScore(pickArr, realArr)
+          : classGroupScore(pickArr, realArr);
+        if (!sc || sc.hidden) {
+          span.innerHTML = "&nbsp;";
+          span.className = "pts pts-hidden";
+        } else {
+          span.textContent = (sc.points > 0 ? "+" : "") + sc.points;
+          span.className = "pts " + sc.cls;
+        }
+      });
+    }
+    function renderClassificados() {
+      const view = document.getElementById("viewClassificados");
+      if (!view) return;
+      const cols = ["Grupo A", "Grupo B", "Grupo C", "Grupo D", "Grupo E", "Grupo F", "Grupo G", "Grupo H", "Grupo I", "Grupo J", "Grupo K", "Grupo L", "3º Colocados"];
+      // Palpites de cada jogador (siglas dos times separadas por "|").
+      const classificados = {
+        "Grupo A": ["MEX|COR","MEX|AFS","MEX|COR","COR|MEX","MEX|COR","MEX|COR","TCH|COR","MEX|TCH","MEX|COR","MEX|AFS","COR|MEX","COR|MEX","MEX|COR","MEX|COR","MEX|COR","MEX|TCH","MEX|COR","TCH|MEX","MEX|COR","MEX|COR","MEX|COR","TCH|MEX"],
+        "Grupo B": ["CAN|SUI","CAN|SUI","SUI|CAN","SUI|CAN","SUI|CAN","SUI|QAT","SUI|CAN","SUI|CAN","SUI|CAN","SUI|CAN","SUI|CAN","SUI|BOS","SUI|CAN","SUI|CAN","SUI|CAN","CAN|SUI","SUI|CAN","SUI|CAN","CAN|SUI","SUI|BOS","SUI|CAN","SUI|CAN"],
+        "Grupo C": ["BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|ESC","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR","BRA|MAR"],
+        "Grupo D": ["EUA|TUR","EUA|AUS","TUR|PAR","TUR|PAR","EUA|AUS","EUA|PAR","EUA|TUR","EUA|PAR","TUR|EUA","EUA|TUR","TUR|PAR","TUR|PAR","EUA|TUR","PAR|EUA","PAR|EUA","EUA|PAR","PAR|TUR","TUR|PAR","PAR|AUS","TUR|PAR","EUA|PAR","TUR|PAR"],
+        "Grupo E": ["ALE|EQU","ALE|CDM","ALE|EQU","ALE|CDM","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","EQU|ALE","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|EQU","ALE|CUR","ALE|CDM"],
+        "Grupo F": ["HOL|JAP","JAP|SUE","JAP|HOL","JAP|HOL","HOL|JAP","HOL|JAP","HOL|SUE","HOL|JAP","HOL|JAP","HOL|JAP","JAP|HOL","JAP|HOL","HOL|JAP","HOL|JAP","HOL|SUE","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP","HOL|JAP"],
+        "Grupo G": ["BEL|EGI","BEL|EGI","BEL|IRA","BEL|EGI","BEL|IRA","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|EGI","BEL|IRA","EGI|BEL","BEL|EGI","IRA|BEL","BEL|EGI","BEL|EGI","BEL|EGI"],
+        "Grupo H": ["ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU","ESP|URU"],
+        "Grupo I": ["FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR","NOR|FRA","FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR","FRA|NOR","FRA|SEN","FRA|SEN","FRA|SEN","FRA|SEN","FRA|NOR","FRA|NOR","FRA|NOR","FRA|SEN","FRA|NOR"],
+        "Grupo J": ["ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AGL","ARG|AUT","ARG|AGL","ARG|AGL","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AUT","ARG|AGL","ARG|AUT"],
+        "Grupo K": ["POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","COL|POR","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|COL","POR|CON","POR|COL"],
+        "Grupo L": ["ING|CRO","ING|CRO","ING|CRO","ING|CRO","CRO|ING","CRO|ING","ING|CRO","ING|GAN","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO","CRO|ING","ING|CRO","ING|CRO","ING|CRO","ING|CRO","ING|CRO"],
+        "3º Colocados": ["PAR|ESC|SUE|SEN|BOS|CON|IRA|AGL","COR|ESC|JOR|IRA|PAR|CON|BOS|PAN","SUE|EUA|AFS|ARA|ESC|AGL|NOR|EGI","SEN|EUA|ESC|BOS|ARA|TCH|IRA|AGL","MAR|PAR|SUE|AUT|SEN|ARA|BOS|GAN","TCH|TUR|PAN|IRA|ARA|NOR|ESC|CDM","SEN|MEX|BOS|CDM|AUS|AUT|ESC|JAP","CDM|CRO|ARA|ESC|SEN|AUT|COR|QAT","PAR|CDM|ESC|TCH|SUE|SEN|CON|PAN","GAN|SUE|ESC|BOS|AUS|TCH|SEN|CBV","NOR|BOS|ESC|SUE|ARA|AGL|PAN|CDM","TCH|EUA|ESC|GAN|CAN|CDM|SEN|CON","CDM|TCH|PAR|IRA|SEN|AGL|SUE|ESC","SUE|BOS|NOR|TUR|ESC|IRA|PAN|TCH","CDM|TCH|JAP|GAN|IRA|ESC|AUS|ARA","NOR|TUR|CDM|AGL|BOS|COR|ESC|SUE","IRA|AUS|TCH|CDM|PAN|ESC|CON|NOR","COR|GAN|CON|SEN|ESC|CDM|SUE|EUA","BOS|SUE|AFS|EGI|EUA|IRQ|AGL|CDM","SEN|GAN|CDM|TCH|SUE|ESC|IRA|CAN","TCH|AUS|IRA|CDM|IRQ|AUT|UZB|BOS","EUA|ESC|SEN|GAN|CON|COR|EQU|ARA"],
+      };
+      classData = classificados;
+      classCols = cols;
+      const nameRows = participants.map((name, pIndex) =>
+        `<tr><td class="name" data-participant="${pIndex}"><span class="name-label">${name}</span><span class="total-box" data-participant="${pIndex}">0</span></td></tr>`).join("");
+      const savedClassTeams = getClassTeamsStore();
+      const headerCells = cols.map(c => {
+        const isGrupo = c.startsWith("Grupo ");
+        const isThirds = c === "3º Colocados";
+        const slotCount = isThirds ? 8 : 2;
+        const letter = c.replace("Grupo ", "").trim();
+        let slotsHtml = "";
+        for (let s = 1; s <= slotCount; s++) {
+          const key = s === 1 ? c : c + "#" + s;
+          const val = (savedClassTeams[key] || "").replace(/"/g, "&quot;");
+          const hint = isGrupo ? s + letter : String(s);
+          slotsHtml +=
+            `<span class="fin-team-wrap"><input type="text" class="fin-team-input" data-col="${c}" data-slot="${s}" value="${val}" placeholder=" " ${adminMode ? "" : "disabled"}><span class="fin-team-hint">${hint}</span>${(isGrupo || isThirds) ? '<span class="fin-team-disp"><img class="fin-team-flag" alt=""><span class="fin-team-sig"></span></span>' : ""}</span>`;
+        }
+        return `<th${isThirds ? ' class="fin-th--wide"' : ""}><div class="fin-head"><span class="fin-head-title">${c}</span><div class="fin-head-slots">${slotsHtml}</div></div></th>`;
+      }).join("");
+      const bodyRows = participants.map((name, pIndex) => {
+        return `<tr>${cols.map(col => {
+          const val = (classificados[col] && classificados[col][pIndex]) || "";
+          const display = val
+            ? val.split("|").map(s => `<span class="fin-sig">${s.trim()}</span>`).join('<span class="fin-sep"></span>')
+            : "";
+          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}"><span class="fin-pick"><span class="fin-flag"></span><span class="fin-name">${display}</span></span><span class="pts pts-hidden">&nbsp;</span></td>`;
+        }).join("")}</tr>`;
+      }).join("");
+      view.innerHTML = `
+        <div class="tab-main">
+          <div class="fin-status-bar"><span class="save-status" id="saveStatusClass"></span></div>
+          <div class="matches-grid">
+            <div class="board">
+              <table class="name-table">
+                <thead>
+                  <tr>
+                    <th class="name-col"><div class="name-col-inner"><span class="phase-label phase-label--static">Classificados</span></div></th>
+                  </tr>
+                </thead>
+                <tbody>${nameRows}</tbody>
+              </table>
+              <div class="scroll-area">
+                <table class="games-table fin-table">
+                  <thead><tr>${headerCells}</tr></thead>
+                  <tbody>${bodyRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    renderClassificados();
+    window.addEventListener("resize", syncClassificadosHeader);
+
+    // Salva o nome do time de cada coluna digitado pelo Admin (chave própria).
+    document.getElementById("viewClassificados").addEventListener("input", e => {
+      const input = e.target.closest(".fin-team-input");
+      if (!input) return;
+      if (!resultsData[CLASS_KEY] || typeof resultsData[CLASS_KEY] !== "object") {
+        resultsData[CLASS_KEY] = {};
+      }
+      const key = input.dataset.slot === "1" ? input.dataset.col : input.dataset.col + "#" + input.dataset.slot;
+      resultsData[CLASS_KEY][key] = input.value;
+      updateGroupBoxFlag(input);
+      pendingKeys.add(CLASS_KEY);
+      updateTotals();
+      schedulePush();
+    });
+    updateClassificadosTotals();
+
+    // Em modo Admin, clicar no rótulo "Classificados" limpa os times digitados.
+    document.getElementById("viewClassificados").addEventListener("click", e => {
+      if (!adminMode) return;
+      if (!e.target.closest(".phase-label--static")) return;
+      document.querySelectorAll("#viewClassificados .fin-team-input").forEach(i => { i.value = ""; });
+      resultsData[CLASS_KEY] = {};
+      pendingKeys.add(CLASS_KEY);
+      updateTotals();
+      schedulePush();
+    });
+
+    // Seletor de time dos boxes dos grupos (A-L) no modo Admin: clicar no box
+    // abre uma lista com os 4 times do grupo; ao escolher, grava a sigla.
+    // Os boxes de "3º Colocados" abrem uma lista com todos os times que NÃO
+    // foram escolhidos nos grupos A-L.
+    let groupPickerMenu = null;
+    // Identifica um box de grupo (Grupo A-L) do Classificados, na tabela real
+    // ou no cabeçalho flutuante. A coluna "3º Colocados" fica de fora.
+    function isClassGroupBox(inp) {
+      if (!inp || !inp.classList || !inp.classList.contains("fin-team-input")) return false;
+      const col = inp.dataset && inp.dataset.col;
+      if (!col || col.indexOf("Grupo ") !== 0) return false;
+      if (inp.closest("#viewClassificados")) return true;
+      return !!(classStickyHead && classStickyHead.contains(inp));
+    }
+    // Identifica um box da coluna "3º Colocados" (tabela real ou cabeçalho fixo).
+    function isClassThirdBox(inp) {
+      if (!inp || !inp.classList || !inp.classList.contains("fin-team-input")) return false;
+      const col = inp.dataset && inp.dataset.col;
+      if (col !== "3º Colocados") return false;
+      if (inp.closest("#viewClassificados")) return true;
+      return !!(classStickyHead && classStickyHead.contains(inp));
+    }
+    function isClassPickerBox(inp) {
+      return isClassGroupBox(inp) || isClassThirdBox(inp);
+    }
+    function closeGroupPicker() {
+      if (groupPickerMenu) { groupPickerMenu.remove(); groupPickerMenu = null; }
+      document.removeEventListener("mousedown", onGroupPickerOutside, true);
+    }
+    function onGroupPickerOutside(e) {
+      if (!groupPickerMenu) return;
+      if (groupPickerMenu.contains(e.target)) return;
+      if (isClassPickerBox(e.target.closest(".fin-team-input"))) return;
+      closeGroupPicker();
+    }
+    // Monta o menu de seleção para um box, com a lista de times informada.
+    function buildClassPicker(input, teamNames) {
+      closeGroupPicker();
+      const view = document.getElementById("viewClassificados");
+      const col = input.dataset.col;
+      const slot = input.dataset.slot;
+      if (!teamNames || !teamNames.length) return;
+      const menu = document.createElement("div");
+      menu.className = "group-picker";
+      teamNames.forEach(name => {
+        const info = TEAM_INFO[name];
+        const sig = info ? info[0] : name;
+        const opt = document.createElement("button");
+        opt.type = "button";
+        opt.className = "group-picker-opt";
+        opt.innerHTML =
+          (info ? `<img class="group-picker-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="">` : "") +
+          `<span class="group-picker-sig">${sig}</span><span class="group-picker-name">${name}</span>`;
+        opt.addEventListener("click", () => {
+          const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
+          if (real) {
+            real.value = sig;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          syncClassStickyInputs();
+          closeGroupPicker();
+        });
+        menu.appendChild(opt);
+      });
+      document.body.appendChild(menu);
+      const r = input.getBoundingClientRect();
+      menu.style.top = (r.bottom + 4) + "px";
+      menu.style.left = r.left + "px";
+      menu.style.minWidth = r.width + "px";
+      const mr = menu.getBoundingClientRect();
+      if (mr.right > window.innerWidth - 8) {
+        menu.style.left = Math.max(8, window.innerWidth - 8 - mr.width) + "px";
+      }
+      if (mr.bottom > window.innerHeight - 8) {
+        menu.style.top = Math.max(8, r.top - 4 - mr.height) + "px";
+      }
+      groupPickerMenu = menu;
+      setTimeout(() => document.addEventListener("mousedown", onGroupPickerOutside, true), 0);
+    }
+    function openGroupPicker(input) {
+      const teams = CLASS_GROUPS[input.dataset.col];
+      if (!teams) return;
+      const sorted = [...teams].sort((a, b) => a.localeCompare(b, "pt-BR"));
+      buildClassPicker(input, sorted);
+    }
+    // Siglas (maiúsculas) já escolhidas nos boxes dos grupos A-L.
+    function getChosenGroupSigs() {
+      const actual = getClassActualTeams();
+      const set = new Set();
+      Object.keys(CLASS_GROUPS).forEach(col => {
+        (actual[col] || []).forEach(v => {
+          const s = (v || "").trim().toUpperCase();
+          if (s) set.add(s);
+        });
+      });
+      return set;
+    }
+    // Lista de seleção dos "3º Colocados": todos os times que NÃO foram
+    // escolhidos como classificados nos grupos A-L.
+    function openThirdPicker(input) {
+      const chosen = getChosenGroupSigs();
+      const teams = [];
+      Object.keys(CLASS_GROUPS).forEach(col => {
+        CLASS_GROUPS[col].forEach(name => {
+          const info = TEAM_INFO[name];
+          const sig = (info ? info[0] : name).toUpperCase();
+          if (!chosen.has(sig)) teams.push(name);
+        });
+      });
+      teams.sort((a, b) => a.localeCompare(b, "pt-BR"));
+      buildClassPicker(input, teams);
+    }
+    // Impede o foco/teclado ao tocar no box e abre a lista de times.
+    document.addEventListener("mousedown", e => {
+      if (adminMode && isClassPickerBox(e.target.closest(".fin-team-input"))) e.preventDefault();
+    }, true);
+    document.addEventListener("click", e => {
+      if (!adminMode) return;
+      const inp = e.target.closest(".fin-team-input");
+      if (isClassGroupBox(inp)) {
+        e.preventDefault();
+        openGroupPicker(inp);
+      } else if (isClassThirdBox(inp)) {
+        e.preventDefault();
+        openThirdPicker(inp);
+      }
+    });
+
+    selectTab("viewJogos");
+
     // Realça o palpite clicado no rodapé, o nome do jogador e o palpite dele
     // para o jogo. Clicar em qualquer outro lugar da tela limpa o destaque.
     function clearTallyHighlight() {
@@ -1862,8 +2949,11 @@
       const score = tally.dataset.score;
       tally.classList.add("highlight");
       container
-        .querySelectorAll(`.score[data-game="${gIndex}"][data-pred="${score}"]`)
+        .querySelectorAll(`.score[data-game="${gIndex}"]`)
         .forEach(cell => {
+          const parsed = parseScore(cell.dataset.pred);
+          const baseScore = parsed ? `${parsed[0]} x ${parsed[1]}` : cell.dataset.pred;
+          if (baseScore !== score) return;
           cell.classList.add("highlight");
           const p = cell.dataset.participant;
           const nameCell = container.querySelector(`.name[data-participant="${p}"]`);
@@ -1873,6 +2963,8 @@
 
     // Sincroniza a altura do cabeçalho e do rodapé da coluna fixa com a tabela de jogos
     function syncBoardHeights() {
+      const viewJogos = document.getElementById("viewJogos");
+      if (viewJogos && viewJogos.hidden) return;
       const nameTable = container.querySelector(".name-table");
       const gamesTable = container.querySelector(".games-table");
       if (!nameTable || !gamesTable) return;
@@ -1887,6 +2979,9 @@
       const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
       const headH = gHeadRow.getBoundingClientRect().height / s;
       const footH = gFootRow.getBoundingClientRect().height / s;
+      // Se a tabela estiver oculta/sem layout, as medidas vêm zeradas:
+      // não aplica para não fixar um cabeçalho com altura inválida.
+      if (headH <= 0 || footH <= 0) return;
       nHead.style.height = headH + "px";
       nFoot.style.height = footH + "px";
     }
@@ -2068,6 +3163,299 @@
       updateStickyHeader();
     });
 
+    // ---- Cabeçalho flutuante da aba Finalistas (mesmo modelo dos Jogos) ----
+    var finStickyHead = null;
+    var finStickyScroll = null;
+
+    function teardownFinSticky() {
+      if (finStickyHead) {
+        finStickyHead.remove();
+        finStickyHead = null;
+        finStickyScroll = null;
+      }
+    }
+
+    function setupFinSticky() {
+      teardownFinSticky();
+      const view = document.getElementById("viewFinalistas");
+      if (!view || view.hidden) return;
+      const board = view.querySelector(".board");
+      const nameTable = view.querySelector(".name-table");
+      const finTable = view.querySelector(".fin-table");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board || !nameTable || !finTable || !realScroll) return;
+
+      finStickyHead = document.createElement("div");
+      finStickyHead.className = "sticky-head";
+      finStickyHead.style.transformOrigin = "top left";
+      finStickyHead.style.transform = "scale(" + (pageScale || 1) + ")";
+
+      const cloneBoard = document.createElement("div");
+      cloneBoard.className = "board";
+
+      const cloneNameTable = document.createElement("table");
+      cloneNameTable.className = "name-table";
+      cloneNameTable.appendChild(nameTable.querySelector("thead").cloneNode(true));
+
+      finStickyScroll = document.createElement("div");
+      finStickyScroll.className = "scroll-area";
+      const cloneFinTable = document.createElement("table");
+      cloneFinTable.className = finTable.className;
+      cloneFinTable.appendChild(finTable.querySelector("thead").cloneNode(true));
+      finStickyScroll.appendChild(cloneFinTable);
+
+      cloneBoard.appendChild(cloneNameTable);
+      cloneBoard.appendChild(finStickyScroll);
+      finStickyHead.appendChild(cloneBoard);
+      document.body.appendChild(finStickyHead);
+
+      // Espelha a edição dos times (Campeão, Vice, etc.) do cabeçalho flutuante
+      finStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        cloneInput.disabled = !adminMode;
+        const col = cloneInput.dataset.col;
+        cloneInput.addEventListener("input", () => {
+          const real = view.querySelector(`.fin-team-input[data-col="${col}"]`);
+          if (real) {
+            real.value = cloneInput.value;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+      });
+
+      // Clicar no rótulo "Finalistas" do cabeçalho flutuante (limpa em modo Admin)
+      const clonePhase = finStickyHead.querySelector(".phase-label--static");
+      if (clonePhase) {
+        clonePhase.addEventListener("click", () => {
+          const real = view.querySelector(".phase-label--static");
+          if (real) real.click();
+        });
+      }
+
+      // Mantém a rolagem horizontal do clone sincronizada com a tabela real
+      realScroll.addEventListener("scroll", () => {
+        if (finStickyScroll) finStickyScroll.scrollLeft = realScroll.scrollLeft;
+      });
+      finStickyScroll.addEventListener("scroll", () => {
+        realScroll.scrollLeft = finStickyScroll.scrollLeft;
+      });
+
+      updateFinStickyGeometry();
+      updateFinSticky();
+    }
+
+    function syncFinStickyInputs() {
+      if (!finStickyHead) return;
+      const view = document.getElementById("viewFinalistas");
+      finStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        const col = cloneInput.dataset.col;
+        const real = view.querySelector(`.fin-team-input[data-col="${col}"]`);
+        if (real) cloneInput.value = real.value;
+      });
+    }
+
+    function updateFinStickyGeometry() {
+      if (!finStickyHead) return;
+      const view = document.getElementById("viewFinalistas");
+      const board = view.querySelector(".board");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const s = pageScale || 1;
+      finStickyHead.style.left = rect.left + "px";
+      finStickyHead.style.width = (rect.width / s) + "px";
+      if (realScroll && finStickyScroll) {
+        finStickyScroll.scrollLeft = realScroll.scrollLeft;
+      }
+    }
+
+    function updateFinSticky() {
+      if (!finStickyHead) return;
+      const view = document.getElementById("viewFinalistas");
+      if (!view || view.hidden) { finStickyHead.classList.remove("visible"); return; }
+      const board = view.querySelector(".board");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const headH = (finStickyHead.offsetHeight || 0) * (pageScale || 1);
+      const shouldShow = rect.top < 0 && rect.bottom > headH + 4;
+      if (shouldShow) {
+        if (!finStickyHead.classList.contains("visible")) {
+          finStickyHead.classList.add("visible");
+          syncFinStickyInputs();
+        }
+        updateFinStickyGeometry();
+      } else {
+        finStickyHead.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", updateFinSticky, { passive: true });
+    window.addEventListener("resize", () => {
+      updateFinStickyGeometry();
+      updateFinSticky();
+    });
+
+    // ---- Cabeçalho flutuante da aba Classificados (cópia independente) ----
+    var classStickyHead = null;
+    var classStickyScroll = null;
+
+    function teardownClassSticky() {
+      if (classStickyHead) {
+        classStickyHead.remove();
+        classStickyHead = null;
+        classStickyScroll = null;
+      }
+    }
+
+    function setupClassSticky() {
+      teardownClassSticky();
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) return;
+      const board = view.querySelector(".board");
+      const nameTable = view.querySelector(".name-table");
+      const finTable = view.querySelector(".fin-table");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board || !nameTable || !finTable || !realScroll) return;
+
+      classStickyHead = document.createElement("div");
+      classStickyHead.className = "sticky-head sticky-head--class";
+      classStickyHead.style.transformOrigin = "top left";
+      classStickyHead.style.transform = "scale(" + (pageScale || 1) + ")";
+
+      const cloneBoard = document.createElement("div");
+      cloneBoard.className = "board";
+
+      const cloneNameTable = document.createElement("table");
+      cloneNameTable.className = "name-table";
+      cloneNameTable.appendChild(nameTable.querySelector("thead").cloneNode(true));
+
+      classStickyScroll = document.createElement("div");
+      classStickyScroll.className = "scroll-area";
+      const cloneFinTable = document.createElement("table");
+      cloneFinTable.className = finTable.className;
+      cloneFinTable.appendChild(finTable.querySelector("thead").cloneNode(true));
+      classStickyScroll.appendChild(cloneFinTable);
+
+      cloneBoard.appendChild(cloneNameTable);
+      cloneBoard.appendChild(classStickyScroll);
+      classStickyHead.appendChild(cloneBoard);
+      document.body.appendChild(classStickyHead);
+
+      classStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        cloneInput.disabled = !adminMode;
+        const col = cloneInput.dataset.col;
+        const slot = cloneInput.dataset.slot;
+        cloneInput.addEventListener("input", () => {
+          const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
+          if (real) {
+            real.value = cloneInput.value;
+            real.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        });
+      });
+
+      const clonePhase = classStickyHead.querySelector(".phase-label--static");
+      if (clonePhase) {
+        clonePhase.addEventListener("click", () => {
+          const real = view.querySelector(".phase-label--static");
+          if (real) real.click();
+        });
+      }
+
+      realScroll.addEventListener("scroll", () => {
+        if (classStickyScroll) classStickyScroll.scrollLeft = realScroll.scrollLeft;
+      });
+      classStickyScroll.addEventListener("scroll", () => {
+        realScroll.scrollLeft = classStickyScroll.scrollLeft;
+      });
+
+      updateClassStickyGeometry();
+      updateClassSticky();
+    }
+
+    function syncClassStickyInputs() {
+      if (!classStickyHead) return;
+      const view = document.getElementById("viewClassificados");
+      classStickyHead.querySelectorAll(".fin-team-input").forEach(cloneInput => {
+        const col = cloneInput.dataset.col;
+        const slot = cloneInput.dataset.slot;
+        const real = view.querySelector(`.fin-team-input[data-col="${col}"][data-slot="${slot}"]`);
+        if (real) cloneInput.value = real.value;
+        updateGroupBoxFlag(cloneInput);
+      });
+    }
+
+    function updateClassStickyGeometry() {
+      if (!classStickyHead) return;
+      const view = document.getElementById("viewClassificados");
+      const board = view.querySelector(".board");
+      const realScroll = view.querySelector(".scroll-area");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const s = pageScale || 1;
+      classStickyHead.style.left = rect.left + "px";
+      classStickyHead.style.width = (rect.width / s) + "px";
+      if (realScroll && classStickyScroll) {
+        classStickyScroll.scrollLeft = realScroll.scrollLeft;
+      }
+    }
+
+    function updateClassSticky() {
+      if (!classStickyHead) return;
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) { classStickyHead.classList.remove("visible"); return; }
+      const board = view.querySelector(".board");
+      if (!board) return;
+      const rect = board.getBoundingClientRect();
+      const headH = (classStickyHead.offsetHeight || 0) * (pageScale || 1);
+      const shouldShow = rect.top < 0 && rect.bottom > headH + 4;
+      if (shouldShow) {
+        if (!classStickyHead.classList.contains("visible")) {
+          classStickyHead.classList.add("visible");
+          syncClassStickyInputs();
+        }
+        updateClassStickyGeometry();
+      } else {
+        classStickyHead.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", updateClassSticky, { passive: true });
+    window.addEventListener("resize", () => {
+      updateClassStickyGeometry();
+      updateClassSticky();
+    });
+
+    // Realça a linha inteira (nome do jogador + seus palpites) ao passar/clicar,
+    // sincronizando a coluna de nomes e a de palpites (tabelas separadas).
+    (function setupRowHighlight() {
+      let curBoard = null, curIdx = null;
+      function setHl(board, idx, on) {
+        if (!board || idx == null) return;
+        board.querySelectorAll(`td[data-participant="${idx}"]`)
+          .forEach(td => td.classList.toggle("row-hl", on));
+      }
+      function clearHl() {
+        if (curBoard) setHl(curBoard, curIdx, false);
+        curBoard = null; curIdx = null;
+      }
+      document.addEventListener("mouseover", e => {
+        const cell = e.target.closest("td[data-participant]");
+        const board = cell && cell.closest(".board");
+        if (!cell || !board) return;
+        const idx = cell.dataset.participant;
+        if (board === curBoard && idx === curIdx) return;
+        clearHl();
+        curBoard = board; curIdx = idx;
+        setHl(board, idx, true);
+      });
+      document.addEventListener("mouseout", e => {
+        const to = e.relatedTarget && e.relatedTarget.closest
+          ? e.relatedTarget.closest("td[data-participant]") : null;
+        if (to && to.dataset.participant === curIdx && to.closest(".board") === curBoard) return;
+        clearHl();
+      });
+    })();
+
     function render() {
       const selected = dateInput.value;
       dateButton.textContent = formatDate(selected);
@@ -2077,6 +3465,8 @@
         container.innerHTML = "";
         noMatches.hidden = false;
         teardownStickyHeader();
+        updateFinalistasTotals();
+        updateClassificadosTotals();
         return;
       }
       noMatches.hidden = true;
@@ -2137,7 +3527,7 @@
       const scoreRows = participants.map((name, pIndex) => {
         const cells = dayGames.map((g, gIndex) =>
           `<td class="score" data-game="${gIndex}" data-participant="${pIndex}" data-pred="${g.p[pIndex]}">
-            <span class="pred">${g.p[pIndex].replace(/x/i, '<span class="pred-x">x</span>')}</span>
+            <span class="pred">${formatPrediction(g.p[pIndex])}</span>
             <span class="pts" data-game="${gIndex}" data-pred="${g.p[pIndex]}"></span>
           </td>`
         ).join("");
@@ -2149,8 +3539,9 @@
         const counts = {};
         let homeWins = 0, draws = 0, awayWins = 0;
         g.p.forEach(score => {
-          counts[score] = (counts[score] || 0) + 1;
           const parsed = parseScore(score);
+          const baseScore = parsed ? `${parsed[0]} x ${parsed[1]}` : score;
+          counts[baseScore] = (counts[baseScore] || 0) + 1;
           if (parsed) {
             if (parsed[0] > parsed[1]) homeWins++;
             else if (parsed[0] < parsed[1]) awayWins++;
@@ -2189,7 +3580,7 @@
           <table class="name-table">
             <thead>
               <tr>
-                <th class="name-col"><div class="name-col-inner"><span class="phase-label">${phaseLabel}</span><span class="name-col-box">Placar Geral</span></div></th>
+                <th class="name-col"><div class="name-col-inner"><span class="phase-label">${phaseLabel}</span></div></th>
               </tr>
             </thead>
             <tbody>${nameRows}</tbody>
@@ -2248,6 +3639,7 @@
           if (!resultsData[k]) resultsData[k] = { h: "", a: "" };
           resultsData[k][pkey] = input.value;
           pendingKeys.add(k);
+          recomputeGame(input.dataset.game);
           schedulePush();
         });
       });
@@ -2314,14 +3706,28 @@
       });
     }
 
-    // Converte "2 x 1" em [2, 1]; retorna null se inválido
+    // Converte "2 x 1" em [2, 1]; retorna null se inválido. Ignora os pênaltis
+    // entre parênteses ("1 x 1 (5 x 4)" → [1, 1]).
     function parseScore(text) {
-      const m = String(text).split("x");
+      const m = String(text).replace(/\([^)]*\)/, "").split("x");
       if (m.length !== 2) return null;
       const h = parseInt(m[0], 10);
       const a = parseInt(m[1], 10);
       if (Number.isNaN(h) || Number.isNaN(a)) return null;
       return [h, a];
+    }
+
+    // Formata o palpite para exibição: "1 x 1 (5 x 4)" → "5  1 x 1  4" com os
+    // pênaltis (ph/pa) em fonte menor e laranja. Sem pênaltis exibe "h x a".
+    function formatPrediction(text) {
+      if (!text) return "";
+      const m = String(text).match(/^\s*(\d+)\s*x\s*(\d+)(?:\s*\(\s*(\d+)\s*x\s*(\d+)\s*\))?\s*$/i);
+      if (!m) return String(text).replace(/x/i, '<span class="pred-x">x</span>');
+      const base = `${m[1]} <span class="pred-x">x</span> ${m[2]}`;
+      if (m[3] != null) {
+        return `<span class="pred-pen">${m[3]}</span>${base}<span class="pred-pen">${m[4]}</span>`;
+      }
+      return base;
     }
 
     // Pontuação: placar exato = 3, placar invertido = -2, só vencedor = 1, erro = 0
@@ -2336,11 +3742,201 @@
       return 0;
     }
 
+    // Jogos da "Segunda Fase" (28.Jun a 3.Jul) usam regras de pontos próprias.
+    function isSegundaFase(dateStr) {
+      return dateStr >= "2026-06-28" && dateStr <= "2026-07-03";
+    }
+
+    // Jogos das Oitavas e Quartas (4.Jul a 11.Jul) usam regras de pontos próprias.
+    function isOitavasQuartas(dateStr) {
+      return dateStr >= "2026-07-04" && dateStr <= "2026-07-11";
+    }
+
+    // Jogos da Semifinal e Disputa de 3º lugar (14.Jul a 18.Jul).
+    function isSemiBronze(dateStr) {
+      return dateStr >= "2026-07-14" && dateStr <= "2026-07-18";
+    }
+
+    // Jogo da Final (19.Jul).
+    function isFinal(dateStr) {
+      return dateStr === "2026-07-19";
+    }
+
+    // Converte um palpite que pode incluir pênaltis: "1 x 1 (5 x 4)" →
+    // { base:[1,1], pen:[5,4] }. Sem parênteses, pen é null.
+    function parsePrediction(text) {
+      const m = String(text).match(/^\s*(\d+)\s*x\s*(\d+)(?:\s*\(\s*(\d+)\s*x\s*(\d+)\s*\))?\s*$/i);
+      if (!m) return { base: null, pen: null };
+      return {
+        base: [parseInt(m[1], 10), parseInt(m[2], 10)],
+        pen: (m[3] != null && m[4] != null) ? [parseInt(m[3], 10), parseInt(m[4], 10)] : null
+      };
+    }
+
+    // Extrai o placar dos pênaltis lançado pelo admin (ph/pa) de um resultado.
+    function penFromResult(r) {
+      if (!r || r.ph === "" || r.ph == null || r.pa === "" || r.pa == null) return null;
+      const ph = parseInt(r.ph, 10), pa = parseInt(r.pa, 10);
+      if (Number.isNaN(ph) || Number.isNaN(pa)) return null;
+      return [ph, pa];
+    }
+
+    // Pontuação dos jogos da Segunda Fase (incl. extras de pênaltis).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreSegundaFase(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 4; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -3; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 2; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 4 : 2;
+        else penExtra = -2;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação dos jogos das Oitavas e Quartas (incl. extras de pênaltis).
+    // Acerto de vencedor/empate = +3 (pts-one), placar exato = +6 (pts-pos),
+    // placar invertido = -5 (pts-neg). Extras de pênaltis: vencedor + placar
+    // exato = +6, só vencedor = +3, errar o vencedor = -3 (total em pts-pen).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreOitavasQuartas(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 6; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -5; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 3; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 6 : 3;
+        else penExtra = -3;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação dos jogos da Semifinal e Disputa de 3º lugar (incl. extras de
+    // pênaltis). Acerto de vencedor/empate = +4 (pts-one), placar exato = +8
+    // (pts-pos), placar invertido = -6 (pts-neg). Extras de pênaltis: vencedor +
+    // placar exato = +8, só vencedor = +4, errar o vencedor = -4 (total pts-pen).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreSemiBronze(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 8; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -6; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 4; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 8 : 4;
+        else penExtra = -4;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação do jogo da Final (incl. extras de pênaltis). Acerto de
+    // vencedor/empate = +5 (pts-one), placar exato = +10 (pts-pos), placar
+    // invertido = -10 (pts-neg). Extras de pênaltis: vencedor + placar exato =
+    // +10, só vencedor = +5, errar o vencedor = -5 (total pts-pen).
+    // Retorna { points, cls, baseCls } ou null (oculto).
+    function scoreFinal(predText, result, penResult) {
+      const { base, pen } = parsePrediction(predText);
+      if (!base) return null;
+      const [ph, pa] = base;
+      const [rh, ra] = result;
+      let basePts, baseCls;
+      if (ph === rh && pa === ra) { basePts = 10; baseCls = "pts-pos"; }
+      else if (ph === ra && pa === rh && ph !== pa) { basePts = -10; baseCls = "pts-neg"; }
+      else if (Math.sign(ph - pa) === Math.sign(rh - ra)) { basePts = 5; baseCls = "pts-one"; }
+      else { basePts = 0; baseCls = null; }
+
+      // Extras de pênaltis: apenas quando o jogo foi de fato à disputa de
+      // pênaltis (empate no tempo normal/prorrogação) e o jogador apostou nela.
+      let penExtra = 0, penApplied = false;
+      const wentToPens = rh === ra && penResult;
+      if (wentToPens && pen) {
+        penApplied = true;
+        const pw = Math.sign(pen[0] - pen[1]);
+        const rw = Math.sign(penResult[0] - penResult[1]);
+        if (pw === rw) penExtra = (pen[0] === penResult[0] && pen[1] === penResult[1]) ? 10 : 5;
+        else penExtra = -5;
+      }
+
+      if (penApplied) return { points: basePts + penExtra, cls: "pts-pen", baseCls };
+      if (basePts === 0) return null;
+      return { points: basePts, cls: baseCls, baseCls };
+    }
+
+    // Pontuação de um jogo conforme a fase. result=[rh,ra] (incl. prorrogação)
+    // ou null; penResult=[ph,pa] do shootout ou null. Retorna {points, cls,
+    // baseCls} ou null (sem pontos / oculto).
+    function scoreGameResult(predText, result, penResult, dateStr) {
+      if (!result) return null;
+      if (isSegundaFase(dateStr)) return scoreSegundaFase(predText, result, penResult);
+      if (isOitavasQuartas(dateStr)) return scoreOitavasQuartas(predText, result, penResult);
+      if (isSemiBronze(dateStr)) return scoreSemiBronze(predText, result, penResult);
+      if (isFinal(dateStr)) return scoreFinal(predText, result, penResult);
+      const pred = parseScore(predText);
+      if (!pred) return null;
+      const pts = computePoints(pred, result);
+      if (pts === 0) return null;
+      const cls = pts === 3 ? "pts-pos" : pts === 1 ? "pts-one" : "pts-neg";
+      return { points: pts, cls, baseCls: cls };
+    }
+
     function recomputeGame(gIndex) {
       const hInput = container.querySelector(`.result-box[data-game="${gIndex}"][data-side="h"]`);
       const aInput = container.querySelector(`.result-box[data-game="${gIndex}"][data-side="a"]`);
       const hasResult = hInput.value !== "" && aInput.value !== "";
       const result = hasResult ? [parseInt(hInput.value, 10), parseInt(aInput.value, 10)] : null;
+      const phInput = container.querySelector(`.penalty-box[data-game="${gIndex}"][data-side="h"]`);
+      const paInput = container.querySelector(`.penalty-box[data-game="${gIndex}"][data-side="a"]`);
+      const penResult = (phInput && paInput && phInput.value !== "" && paInput.value !== "")
+        ? [parseInt(phInput.value, 10), parseInt(paInput.value, 10)] : null;
+      const dateStr = dateInput.value;
 
       container.querySelectorAll(`.pts[data-game="${gIndex}"]`).forEach(span => {
         if (!result) {
@@ -2348,18 +3944,14 @@
           span.className = "pts pts-hidden";
           return;
         }
-        const pred = parseScore(span.dataset.pred);
-        const points = pred ? computePoints(pred, result) : 0;
-        if (points === 0) {
+        const sc = scoreGameResult(span.dataset.pred, result, penResult, dateStr);
+        if (!sc) {
           span.innerHTML = "&nbsp;";
           span.className = "pts pts-hidden";
           return;
         }
-        span.textContent = points > 0 ? `+${points}` : `${points}`;
-        const cls = points === 3 ? "pts-pos"
-          : points === 1 ? "pts-one"
-          : "pts-neg";
-        span.className = "pts " + cls;
+        span.textContent = sc.points > 0 ? `+${sc.points}` : `${sc.points}`;
+        span.className = "pts " + sc.cls;
       });
 
       updateTotals();
@@ -2376,8 +3968,8 @@
         if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
         const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
         if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
-        const pred = parseScore(g.p[pIndex]);
-        if (pred) total += computePoints(pred, result);
+        const sc = scoreGameResult(g.p[pIndex], result, penFromResult(r), g.d);
+        if (sc) total += sc.points;
       });
       return total;
     }
@@ -2391,47 +3983,25 @@
         if (!r || r.h === "" || r.h == null || r.a === "" || r.a == null) return;
         const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
         if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
-        const pred = parseScore(g.p[pIndex]);
-        if (!pred) return;
-        const pts = computePoints(pred, result);
-        if (pts === 3) c3++;
-        else if (pts === 1) c1++;
-        else if (pts === -2) cNeg++;
+        const { base } = parsePrediction(g.p[pIndex]);
+        if (!base) return;
+        const sc = scoreGameResult(g.p[pIndex], result, penFromResult(r), g.d);
+        const cls = sc ? sc.baseCls : null;
+        if (cls === "pts-pos") c3++;
+        else if (cls === "pts-one") c1++;
+        else if (cls === "pts-neg") cNeg++;
         else c0++;
-        total += pts;
+        if (sc) total += sc.points;
       });
       return { c3, c1, c0, cNeg, total };
     }
 
     function updateTotals() {
       const upToDate = dateInput.value;
-      const boxes = Array.from(container.querySelectorAll(".total-box"));
-      const totals = boxes.map(box => computeParticipantTotal(parseInt(box.dataset.participant, 10), upToDate));
-
-      // Há ao menos um placar lançado até o dia selecionado?
-      const hasAnyResult = games.some(g => {
-        if (upToDate && g.d > upToDate) return false;
-        const r = resultsData[gameKey(g)];
-        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
-      });
-
-      // Três maiores pontuações distintas
-      const distinct = [...new Set(totals)].sort((a, b) => b - a);
-      const first = distinct[0];
-      const second = distinct[1];
-      const third = distinct[2];
-
-      boxes.forEach((box, i) => {
-        const total = totals[i];
-        box.textContent = total;
-        let rank = "rank-none";
-        if (hasAnyResult) {
-          if (total === first) rank = "rank-1";
-          else if (total === second) rank = "rank-2";
-          else if (total === third) rank = "rank-3";
-        }
-        box.className = "total-box " + rank;
-      });
+      paintTotals(Array.from(container.querySelectorAll(".total-box")), upToDate);
+      // O Placar Geral é único: mantém os boxes da aba Finalistas em sincronia.
+      updateFinalistasTotals();
+      updateClassificadosTotals();
     }
 
     dateInput.addEventListener("change", () => {
