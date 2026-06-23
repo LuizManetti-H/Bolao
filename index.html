@@ -1429,6 +1429,60 @@
       font-size: 0.8rem;
     }
 
+    /* Palpites clicáveis do rodapé do modo Classificados (par de siglas por
+       grupo ou sigla individual na coluna "3º Colocados"). */
+    #viewClassificados .class-tally-score {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 1px 4px;
+      justify-self: start;
+    }
+    #viewClassificados .class-tally-score.highlight,
+    #viewClassificados .fin-cell.highlight,
+    #viewClassificados .name.name-hl { background: #fef9c3 !important; }
+
+    /* "3º Colocados": siglas em grade (5 por linha), sigla alinhada à esquerda
+       e a quantidade centralizada e alinhada entre todos da mesma coluna.
+       Cada item usa subgrid para compartilhar as trilhas (sigla | qtd) do
+       contêiner, garantindo que as quantidades fiquem alinhadas verticalmente. */
+    #viewClassificados .tally-thirds .thirds-grid {
+      display: grid;
+      grid-template-columns: repeat(4, auto auto);
+      column-gap: 24px;
+      row-gap: 0;
+      justify-content: center;
+      width: fit-content;
+      margin: 0 auto;
+    }
+    #viewClassificados .class-tally-third {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: span 2;
+      align-items: center;
+      column-gap: 5px;
+      /* mesma altura de linha dos palpites de grupo (li ~29.6px) para
+         que cada linha de terceiros fique alinhada com a respectiva linha. */
+      height: 29.6px;
+      box-sizing: border-box;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    #viewClassificados .class-tally-third > .fin-sig {
+      justify-self: start;
+      font-family: "Red Hat Mono", ui-monospace, monospace;
+      font-weight: 400;
+    }
+    #viewClassificados .class-tally-third > .tally-qty {
+      justify-self: center;
+      width: 28px;
+      height: 21px;
+      min-width: 0;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     footer {
       text-align: center;
       color: var(--muted);
@@ -2280,7 +2334,7 @@
         teardownFinSticky();
       }
       if (viewId === "viewClassificados") {
-        requestAnimationFrame(() => { syncClassificadosHeader(); setupClassSticky(); });
+        requestAnimationFrame(() => { syncClassificadosHeader(); syncClassificadosFooter(); setupClassSticky(); });
         updateClassificadosTotals();
       } else {
         teardownClassSticky();
@@ -2736,8 +2790,47 @@
           const display = val
             ? val.split("|").map(s => `<span class="fin-sig">${s.trim()}</span>`).join('<span class="fin-sep"></span>')
             : "";
-          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}"><span class="fin-pick"><span class="fin-flag"></span><span class="fin-name">${display}</span></span><span class="pts pts-hidden">&nbsp;</span></td>`;
+          return `<td class="fin-cell${val === "Brasil" ? " fin-cell--brasil" : ""}" data-col="${col}" data-participant="${pIndex}" data-pick="${val}"><span class="fin-pick"><span class="fin-flag"></span><span class="fin-name">${display}</span></span><span class="pts pts-hidden">&nbsp;</span></td>`;
         }).join("")}</tr>`;
+      }).join("");
+      // Rodapé "Palpites": por grupo conta cada par (1º+2º, na ordem); na coluna
+      // "3º Colocados" conta cada sigla individualmente entre os 8 escolhidos.
+      const footerCells = cols.map(col => {
+        const picks = classificados[col] || [];
+        let items = "";
+        if (col === "3º Colocados") {
+          const counts = {};
+          picks.forEach(pick => {
+            (pick || "").split("|").map(s => s.trim()).filter(Boolean).forEach(sig => {
+              counts[sig] = (counts[sig] || 0) + 1;
+            });
+          });
+          items = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([sig, qty]) => `
+              <span class="class-tally-score class-tally-third" data-col="${col}" data-sig="${sig}"><span class="fin-sig">${sig}</span><span class="tally-qty">${qty}</span></span>`).join("");
+        } else {
+          const counts = {};
+          picks.forEach(pick => {
+            const key = (pick || "").trim();
+            if (!key) return;
+            counts[key] = (counts[key] || 0) + 1;
+          });
+          items = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([pick, qty]) => {
+              const disp = pick.split("|").map(s => `<span class="fin-sig">${s.trim()}</span>`).join('<span class="fin-sep"></span>');
+              return `
+              <li>
+                <span class="class-tally-score" data-col="${col}" data-pick="${pick}"><span class="fin-name">${disp}</span></span>
+                <span class="tally-qty">${qty}</span>
+              </li>`;
+            }).join("");
+        }
+        if (col === "3º Colocados") {
+          return `<td class="tally tally-thirds">${items ? `<div class="thirds-grid">${items}</div>` : ""}</td>`;
+        }
+        return `<td class="tally">${items ? `<ul>${items}</ul>` : ""}</td>`;
       }).join("");
       view.innerHTML = `
         <div class="tab-main">
@@ -2751,11 +2844,17 @@
                   </tr>
                 </thead>
                 <tbody>${nameRows}</tbody>
+                <tfoot>
+                  <tr>
+                    <td class="tally-label">Palpites</td>
+                  </tr>
+                </tfoot>
               </table>
               <div class="scroll-area">
                 <table class="games-table fin-table">
                   <thead><tr>${headerCells}</tr></thead>
                   <tbody>${bodyRows}</tbody>
+                  <tfoot><tr>${footerCells}</tr></tfoot>
                 </table>
               </div>
             </div>
@@ -2764,6 +2863,52 @@
     }
     renderClassificados();
     window.addEventListener("resize", syncClassificadosHeader);
+
+    // Iguala a altura do rodapé "Palpites" da coluna de nomes com o rodapé da
+    // tabela de grupos (altura variável conforme a lista de palpites de cada grupo).
+    function syncClassificadosFooter() {
+      const view = document.getElementById("viewClassificados");
+      if (!view || view.hidden) return;
+      const nameFoot = view.querySelector(".name-table tfoot td");
+      const gamesFootRow = view.querySelector(".games-table tfoot tr");
+      if (!nameFoot || !gamesFootRow) return;
+      const s = (typeof pageScale === "number" && pageScale) ? pageScale : 1;
+      nameFoot.style.height = "auto";
+      const h = gamesFootRow.getBoundingClientRect().height / s;
+      if (h > 0) nameFoot.style.height = h + "px";
+    }
+    window.addEventListener("resize", syncClassificadosFooter);
+
+    // Área "Palpites" do Classificados: clicar numa sigla/par destaca todas as
+    // células e os jogadores que usaram aquele palpite. Clicar de novo (ou em
+    // outro lugar) limpa o destaque.
+    function clearClassTallyHighlight() {
+      document
+        .querySelectorAll("#viewClassificados .class-tally-score.highlight, #viewClassificados .fin-cell.highlight, #viewClassificados .name.name-hl")
+        .forEach(el => el.classList.remove("highlight", "name-hl"));
+    }
+    document.addEventListener("click", e => {
+      const entry = e.target.closest("#viewClassificados .class-tally-score");
+      const wasActive = entry && entry.classList.contains("highlight");
+      clearClassTallyHighlight();
+      if (!entry || wasActive) return;
+      entry.classList.add("highlight");
+      const view = document.getElementById("viewClassificados");
+      const col = entry.dataset.col;
+      const wantSig = entry.dataset.sig || "";
+      const wantPick = entry.dataset.pick || "";
+      view.querySelectorAll(`.fin-cell[data-col="${col}"]`).forEach(cell => {
+        const pick = cell.dataset.pick || "";
+        const match = wantSig
+          ? pick.split("|").map(s => s.trim()).includes(wantSig)
+          : pick === wantPick;
+        if (!match) return;
+        cell.classList.add("highlight");
+        const p = cell.dataset.participant;
+        const nameCell = view.querySelector(`.name[data-participant="${p}"]`);
+        if (nameCell) nameCell.classList.add("name-hl");
+      });
+    });
 
     // Salva o nome do time de cada coluna digitado pelo Admin (chave própria).
     document.getElementById("viewClassificados").addEventListener("input", e => {
