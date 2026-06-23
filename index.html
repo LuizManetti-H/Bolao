@@ -1086,8 +1086,8 @@
 
     /* Times em uma única linha ("Time A" x "Time B") a partir da Segunda Fase */
     .games-table.wide-cols .match-teams {
-      flex-direction: row;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
       gap: 6px;
     }
@@ -1134,6 +1134,18 @@
       gap: 5px;
       height: auto;
       line-height: 1;
+      min-width: 0;
+    }
+
+    /* Cada time ocupa metade da coluna (1fr) e "abraça" o x: o lado da casa
+       alinha à direita e o visitante à esquerda. Assim o x (coluna central
+       auto) fica sempre no centro exato da coluna, independentemente do
+       tamanho dos nomes, siglas ou placeholders de cada lado. */
+    .games-table.wide-cols .match-teams .team:first-child {
+      justify-content: flex-end;
+    }
+    .games-table.wide-cols .match-teams .team:last-child {
+      justify-content: flex-start;
     }
 
     .games-table.wide-cols .match-teams .team-x {
