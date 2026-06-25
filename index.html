@@ -2380,29 +2380,112 @@
     // Recalcula os placares por data a partir dos resultados atuais. Usa a mesma
     // regra do placar diário do modo Jogos: Placar Geral acumulado até cada data
     // (computeParticipantGrandTotal). As datas vêm da linha do tempo real dos jogos.
-    function refreshEvoData() {
-      // Considera apenas dias que têm jogos (dias sem jogos são ignorados).
-      // Percorre os dias de jogo em ordem e para no primeiro dia cujo próximo
-      // jogo válido ainda está sem resultado — esse é o último dia da linha do tempo.
-      const dateHasResult = d => games.some(g => {
-        if (g.d !== d) return false;
+    // Gatilhos cronológicos: ao alcançar um timeslot (data+hora), além dos jogos
+    // daquele horário, contabiliza também os pontos do(s) grupo(s) de Classificados
+    // e/ou das colunas de Finalistas indicados — "ao mesmo tempo".
+    const EVO_CLASS_TRIGGERS = {
+      "2026-06-24T15:00": ["Grupo B"],
+      "2026-06-24T18:00": ["Grupo C"],
+      "2026-06-24T21:00": ["Grupo A"],
+      "2026-06-25T16:00": ["Grupo E"],
+      "2026-06-25T19:00": ["Grupo F"],
+      "2026-06-25T22:00": ["Grupo D"],
+      "2026-06-26T15:00": ["Grupo I"],
+      "2026-06-26T20:00": ["Grupo H"],
+      "2026-06-26T23:00": ["Grupo G"],
+      "2026-06-27T17:00": ["Grupo L"],
+      "2026-06-27T19:30": ["Grupo K"],
+      // Último timeslot de grupos: fecha o Grupo J e libera os 3º Colocados.
+      "2026-06-27T22:00": ["Grupo J", "3º Colocados"]
+    };
+    const EVO_FINAL_TRIGGERS = {
+      "2026-07-18T17:00": ["3º Lugar", "4º Lugar"],
+      "2026-07-19T15:00": ["Campeão", "Vice-campeão"]
+    };
+
+    function evoSlotKey(d, t) {
+      const [h = "00", m = "00"] = String(t || "00:00").split(":");
+      return d + "T" + h.padStart(2, "0") + ":" + m.padStart(2, "0");
+    }
+    function evoResulted(r) {
+      return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+    }
+    // Soma o score dos jogos até (e incluindo) o timeslot informado, em ordem
+    // cronológica (data+hora). Comparação lexicográfica funciona pelo formato fixo.
+    function evoJogosUpToSlot(pIndex, slotK) {
+      let total = 0;
+      games.forEach(g => {
+        if (evoSlotKey(g.d, g.t) > slotK) return;
         const r = resultsData[gameKey(g)];
-        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+        if (!evoResulted(r)) return;
+        const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
+        if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
+        const sc = scoreGameResult(g.p[pIndex], result, penFromResult(r), g.d);
+        if (sc) total += sc.points;
       });
-      const allDates = [...new Set(games.map(g => g.d))].sort();
-      const isoDates = [];
-      for (const d of allDates) {
-        if (!dateHasResult(d)) break; // próximo jogo válido sem resultado → encerra
-        isoDates.push(d);
+      return total;
+    }
+    // Pontos de Finalistas considerando apenas as colunas já liberadas por gatilho.
+    function evoFinalistaPartial(pIndex, actual, cols) {
+      let total = 0;
+      cols.forEach(col => {
+        const real = (actual[col] || "").trim().toLowerCase();
+        if (!real) return;
+        const pick = ((finalistsData[col] && finalistsData[col][pIndex]) || "").trim().toLowerCase();
+        if (pick && pick === real) total += FIN_POINTS[col] || 0;
+      });
+      return total;
+    }
+
+    function refreshEvoData() {
+      // Linha do tempo cronológica por timeslot (data + hora). Um timeslot só
+      // entra quando TODOS os seus jogos têm resultado; para no primeiro incompleto.
+      const slotMap = new Map();
+      games.forEach(g => slotMap.set(evoSlotKey(g.d, g.t), { d: g.d, t: g.t }));
+      const allSlots = [...slotMap.values()]
+        .sort((a, b) => evoSlotKey(a.d, a.t).localeCompare(evoSlotKey(b.d, b.t)));
+      const slotComplete = slot => games
+        .filter(g => g.d === slot.d && g.t === slot.t)
+        .every(g => evoResulted(resultsData[gameKey(g)]));
+      const slots = [];
+      for (const slot of allSlots) {
+        if (!slotComplete(slot)) break;
+        slots.push(slot);
       }
-      evoLabels = ["Início", ...isoDates.map(evoIsoToBR)];
+
+      // Estado acumulado de gatilhos por índice de timeslot.
+      const slotAllowedGroups = [];
+      const slotFinalCols = [];
+      const ag = new Set();
+      const fc = [];
+      slots.forEach(slot => {
+        const k = evoSlotKey(slot.d, slot.t);
+        (EVO_CLASS_TRIGGERS[k] || []).forEach(c => ag.add(c));
+        (EVO_FINAL_TRIGGERS[k] || []).forEach(c => { if (!fc.includes(c)) fc.push(c); });
+        slotAllowedGroups.push(new Set(ag));
+        slotFinalCols.push(fc.slice());
+      });
+
+      const classActual = getClassActualTeams();
+      const finalActual = getFinalActualTeams();
+
+      evoLabels = ["Início", ...slots.map(s => evoIsoToBR(s.d))];
       evoSeries = participants.map((name, idx) => {
         const p = [0];
-        isoDates.forEach(d => p.push(computeParticipantGrandTotal(idx, d)));
+        slots.forEach((slot, si) => {
+          const k = evoSlotKey(slot.d, slot.t);
+          const jogos = evoJogosUpToSlot(idx, k);
+          const groups = slotAllowedGroups[si];
+          const classPts = groups.size
+            ? computeClassificadosTotal(idx, classActual, groups) : 0;
+          const finPts = evoFinalistaPartial(idx, finalActual, slotFinalCols[si]);
+          p.push(jogos + classPts + finPts);
+        });
         return { name, idx, p };
       });
       evoGMAX = Math.max(1, ...evoSeries.map(s => Math.max(...s.p)));
     }
+
 
     function evoFrame(day) {
       const distinct = [...new Set(evoSeries.map(s => s.p[day]))].sort((a, b) => b - a);
@@ -2468,11 +2551,14 @@
         if (evoTimer) { clear(); playBtn.innerHTML = EVO_ICON.play; return; } // pausa
         playBtn.innerHTML = EVO_ICON.pause;
         if (+slider.value >= D - 1) { slider.value = 0; evoFrame(0); }
+        const stepMs = Math.max(1, 15000 / Math.max(1, D - 1)); // animação total sempre ~15s (delay reduzido pela metade)
+        const moveMs = Math.min(700, Math.max(120, stepMs * 0.85)); // transição do cavalo acompanha o passo
+        Object.values(evoLanes).forEach(L => { L.runner.style.transitionDuration = moveMs + "ms"; });
         evoTimer = setInterval(() => {
           let d = +slider.value;
           if (d >= D - 1) { clear(); evoFinished = true; playBtn.innerHTML = EVO_ICON.stop; return; }
           slider.value = d + 1; evoFrame(d + 1);
-        }, 850);
+        }, stepMs);
       };
     }
 
