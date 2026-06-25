@@ -307,7 +307,7 @@
     .evo-lscore { flex: 0 0 28px; text-align: right; padding-right: 8px; font-size: .7rem; font-weight: 800; color: #334155; font-variant-numeric: tabular-nums; }
     .evo-run { position: relative; flex: 1; height: 100%; border-left: 2px solid #e2e8f0; }
     .evo-finish { position: absolute; z-index: 0; top: 0; bottom: 0; right: 0; width: 3px; background: repeating-linear-gradient(45deg,#0f172a 0 5px,#fff 5px 10px); border-radius: 2px; }
-    .evo-runner { position: absolute; left: 0; top: 50%; transform: translateY(-50%); transition: left .7s cubic-bezier(.4,0,.2,1); }
+    .evo-runner { position: absolute; left: 0; top: 50%; transform: translateY(-50%); transition: left .7s linear; }
     .evo-horse { position: relative; width: 42px; height: 28px; }
     .evo-horse-fill {
       position: absolute; inset: 0; background: #fff;
@@ -2551,9 +2551,9 @@
         if (evoTimer) { clear(); playBtn.innerHTML = EVO_ICON.play; return; } // pausa
         playBtn.innerHTML = EVO_ICON.pause;
         if (+slider.value >= D - 1) { slider.value = 0; evoFrame(0); }
-        const stepMs = Math.max(1, 15000 / Math.max(1, D - 1)); // animação total sempre ~15s (delay reduzido pela metade)
-        const moveMs = Math.min(700, Math.max(120, stepMs * 0.85)); // transição do cavalo acompanha o passo
-        Object.values(evoLanes).forEach(L => { L.runner.style.transitionDuration = moveMs + "ms"; });
+        const stepMs = Math.max(1, 10000 / Math.max(1, D - 1)); // animação total sempre ~10s
+        const moveMs = stepMs; // transição dura o passo inteiro → movimento contínuo, sem parar
+        Object.values(evoLanes).forEach(L => { L.runner.style.transitionTimingFunction = "linear"; L.runner.style.transitionDuration = moveMs + "ms"; });
         evoTimer = setInterval(() => {
           let d = +slider.value;
           if (d >= D - 1) { clear(); evoFinished = true; playBtn.innerHTML = EVO_ICON.stop; return; }
