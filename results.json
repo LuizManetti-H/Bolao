@@ -280,10 +280,12 @@
   },
   "2026-06-24|Rep. Tcheca|México": {
     "h": "0",
-    "a": "0"
+    "a": "0",
+    "status": "live"
   },
   "2026-06-24|África do Sul|Coreia do Sul": {
     "h": "0",
-    "a": "0"
+    "a": "0",
+    "status": "live"
   }
 }
