@@ -249,6 +249,79 @@
       color: var(--text);
     }
 
+    #rankingTitle {
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    #rankingTitle:hover {
+      color: var(--accent);
+    }
+
+    .evolucao-modal {
+      background: #0f172a;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 430px;
+      max-height: 95vh;
+      overflow: auto;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.45);
+      padding: 0;
+    }
+
+    /* ===== Placar Geral dinâmico (pista de corrida) ===== */
+    #evoRoot { padding: 12px; }
+    .evo-card {
+      background: #fff; border-radius: 16px; padding: 12px 14px 10px;
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); position: relative; overflow: hidden;
+    }
+    .evo-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .evo-play {
+      border: 0; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; flex: 0 0 auto;
+      background: linear-gradient(135deg, #0094C8, #1d4ed8); color: #fff;
+      box-shadow: 0 8px 20px -6px #0094C8; display: flex; align-items: center; justify-content: center;
+      line-height: 0; padding: 0;
+    }
+    .evo-play svg { width: 87%; height: 87%; display: block; }
+    .evo-controls input[type=range] {
+      flex: 1; accent-color: #0094C8; -webkit-appearance: none; appearance: none;
+      height: 4px; border-radius: 999px; background: #cbd5e1; cursor: pointer;
+    }
+    .evo-controls input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 10px; height: 10px; border-radius: 50%;
+      background: #0094C8; border: 0; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+    }
+    .evo-controls input[type=range]::-moz-range-thumb {
+      width: 10px; height: 10px; border-radius: 50%; background: #0094C8; border: 0;
+    }
+    .evo-controls input[type=range]::-moz-range-track { height: 4px; border-radius: 999px; background: #cbd5e1; }
+    .evo-day { font-weight: 800; font-size: 1.05rem; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; color: #0f172a; }
+    .evo-track { position: relative; margin-top: 4px; }
+    .evo-lane {
+      position: relative; z-index: 1; height: 25px; display: flex; align-items: center; cursor: pointer; border-radius: 6px;
+      transition: background .2s;
+    }
+    .evo-lane:hover { background: #f1f5f9; }
+    .evo-lane.hl { background: #dcfce7; }
+    .evo-lane.hl:hover { background: #bbf7d0; }
+    .evo-lane + .evo-lane { border-top: 1px dashed #eef2f7; }
+    .evo-lscore { flex: 0 0 28px; text-align: right; padding-right: 8px; font-size: .7rem; font-weight: 800; color: #334155; font-variant-numeric: tabular-nums; }
+    .evo-run { position: relative; flex: 1; height: 100%; border-left: 2px solid #e2e8f0; }
+    .evo-finish { position: absolute; z-index: 0; top: 0; bottom: 0; right: 0; width: 3px; background: repeating-linear-gradient(45deg,#0f172a 0 5px,#fff 5px 10px); border-radius: 2px; }
+    .evo-runner { position: absolute; left: 0; top: 50%; transform: translateY(-50%); transition: left .7s cubic-bezier(.4,0,.2,1); }
+    .evo-horse { position: relative; width: 42px; height: 28px; }
+    .evo-horse-fill {
+      position: absolute; inset: 0; background: #fff;
+      -webkit-mask: url('flags/Cavalo.png') center/contain no-repeat;
+      mask: url('flags/Cavalo.png') center/contain no-repeat;
+      transition: background .4s;
+    }
+    .evo-horse-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; pointer-events: none; }
+    .evo-horse-name {
+      position: absolute; left: 47%; top: 47%; transform: translate(-50%, calc(-50% - 2px));
+      font-size: .6rem; font-weight: 800; color: #000; white-space: nowrap; letter-spacing: -.3px;
+      text-shadow: 0 1px 2px rgba(255,255,255,.7); pointer-events: none;
+    }
+
     .ranking-table {
       width: 100%;
       border-collapse: separate;
@@ -1621,6 +1694,21 @@
     </div>
   </div>
 
+  <div class="admin-overlay" id="evolucaoOverlay" hidden>
+    <div class="evolucao-modal" id="evolucaoModal" role="dialog" aria-modal="true" aria-label="Evolução do Placar Geral">
+      <div id="evoRoot">
+        <div class="evo-card">
+          <div class="evo-controls">
+            <button class="evo-play" id="evoPlayBtn" type="button" aria-label="Reproduzir"></button>
+            <input type="range" id="evoSlider" min="0" value="0" />
+            <div class="evo-day" id="evoDay"></div>
+          </div>
+          <div class="evo-track" id="evoTrack"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="admin-overlay" id="resultsOverlay" hidden>
     <div class="ranking-modal results-modal" id="resultsModal" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
       <h2 id="resultsTitle">Resultados</h2>
@@ -2229,6 +2317,152 @@
 
     rankingOverlay.addEventListener("click", e => {
       if (e.target === rankingOverlay) closeRanking();
+    });
+
+    // ---- Evolução do Placar Geral (pista de corrida dinâmica) ----
+    const evolucaoOverlay = document.getElementById("evolucaoOverlay");
+    const rankingTitle = document.getElementById("rankingTitle");
+    let evoInited = false;
+    let evoLanes = {};      // idx -> { runner, fill, name, score }
+    let evoSeries = [];     // [{ name, idx, p:[...] }] recalculado a cada abertura
+    let evoLabels = [];     // ['Início','11/06',...]
+    let evoGMAX = 1;
+    let evoTimer = null;
+    let evoFinished = false;
+
+    const EVO_ICON = {
+      play:'<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="8,5 8,19 19,12" fill="currentColor"/></svg>',
+      pause:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="6" width="3" height="12" fill="currentColor"/><rect x="13" y="6" width="3" height="12" fill="currentColor"/></svg>',
+      stop:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" fill="currentColor"/></svg>'
+    };
+    const EVO_RC = { 1: "#FFD700", 2: "#C0C0C0", 3: "#E0A878" }; // ouro, prata, bronze
+    const EVO_LAST = "#EF4444";   // vermelho (último)
+    const EVO_PENULT = "#F9A8D4"; // rosa (penúltimo)
+
+    function evoIsoToBR(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+      return m ? m[3] + "/" + m[2] : iso;
+    }
+
+    // Recalcula os placares por data a partir dos resultados atuais. Usa a mesma
+    // regra do placar diário do modo Jogos: Placar Geral acumulado até cada data
+    // (computeParticipantGrandTotal). As datas vêm da linha do tempo real dos jogos.
+    function refreshEvoData() {
+      // Considera apenas dias que têm jogos (dias sem jogos são ignorados).
+      // Percorre os dias de jogo em ordem e para no primeiro dia cujo próximo
+      // jogo válido ainda está sem resultado — esse é o último dia da linha do tempo.
+      const dateHasResult = d => games.some(g => {
+        if (g.d !== d) return false;
+        const r = resultsData[gameKey(g)];
+        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+      });
+      const allDates = [...new Set(games.map(g => g.d))].sort();
+      const isoDates = [];
+      for (const d of allDates) {
+        if (!dateHasResult(d)) break; // próximo jogo válido sem resultado → encerra
+        isoDates.push(d);
+      }
+      evoLabels = ["Início", ...isoDates.map(evoIsoToBR)];
+      evoSeries = participants.map((name, idx) => {
+        const p = [0];
+        isoDates.forEach(d => p.push(computeParticipantGrandTotal(idx, d)));
+        return { name, idx, p };
+      });
+      evoGMAX = Math.max(1, ...evoSeries.map(s => Math.max(...s.p)));
+    }
+
+    function evoFrame(day) {
+      const distinct = [...new Set(evoSeries.map(s => s.p[day]))].sort((a, b) => b - a);
+      const first = distinct[0], second = distinct[1], third = distinct[2];
+      const last = distinct[distinct.length - 1], penult = distinct[distinct.length - 2];
+      evoSeries.forEach(s => {
+        const L = evoLanes[s.idx], v = s.p[day];
+        const frac = evoGMAX ? (v / evoGMAX) : 0;
+        // O líder (frac = 1) leva apenas o focinho por cima da linha de chegada.
+        // A pista útil vai de 0 até (100% - 41px); somando os 42px do cavalo,
+        // só a pontinha do focinho ultrapassa a linha (~1px).
+        L.runner.style.left = `calc(${frac} * (100% - 41px))`;
+        L.score.textContent = v;
+        let bg = "#ffffff";
+        if (v > 0) {
+          if (v === first) bg = EVO_RC[1];
+          else if (v === second) bg = EVO_RC[2];
+          else if (v === third) bg = EVO_RC[3];
+          else if (v === last) bg = EVO_LAST;
+          else if (v === penult) bg = EVO_PENULT;
+        }
+        L.fill.style.background = bg;
+      });
+      document.getElementById("evoDay").textContent = evoLabels[day];
+    }
+
+    function buildEvoLanes() {
+      const track = document.getElementById("evoTrack");
+      track.innerHTML = "";
+      evoLanes = {};
+      let hlLane = null;
+      const ordered = participants
+        .map((name, idx) => ({ name, idx }))
+        .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+      ordered.forEach(s => {
+        const lane = document.createElement("div");
+        lane.className = "evo-lane";
+        lane.innerHTML = `<span class="evo-lscore">0</span><div class="evo-run"><div class="evo-runner"><div class="evo-horse"><div class="evo-horse-fill"></div><img class="evo-horse-img" src="flags/Cavalo.png" alt=""><span class="evo-horse-name">${s.name}</span></div></div></div>`;
+        lane.addEventListener("click", () => {
+          if (hlLane === lane) { lane.classList.remove("hl"); hlLane = null; return; }
+          if (hlLane) hlLane.classList.remove("hl");
+          lane.classList.add("hl"); hlLane = lane;
+        });
+        track.appendChild(lane);
+        evoLanes[s.idx] = {
+          runner: lane.querySelector(".evo-runner"),
+          fill: lane.querySelector(".evo-horse-fill"),
+          name: lane.querySelector(".evo-horse-name"),
+          score: lane.querySelector(".evo-lscore")
+        };
+      });
+      const fin = document.createElement("div"); fin.className = "evo-finish"; track.appendChild(fin);
+    }
+
+    function wireEvoPlay() {
+      const playBtn = document.getElementById("evoPlayBtn");
+      const slider = document.getElementById("evoSlider");
+      const clear = () => { if (evoTimer) { clearInterval(evoTimer); evoTimer = null; } };
+      slider.oninput = () => { clear(); evoFinished = false; playBtn.innerHTML = EVO_ICON.play; evoFrame(+slider.value); };
+      playBtn.onclick = () => {
+        const D = evoLabels.length;
+        if (evoFinished) { slider.value = 0; evoFrame(0); clear(); evoFinished = false; playBtn.innerHTML = EVO_ICON.play; return; } // stop → início
+        if (evoTimer) { clear(); playBtn.innerHTML = EVO_ICON.play; return; } // pausa
+        playBtn.innerHTML = EVO_ICON.pause;
+        if (+slider.value >= D - 1) { slider.value = 0; evoFrame(0); }
+        evoTimer = setInterval(() => {
+          let d = +slider.value;
+          if (d >= D - 1) { clear(); evoFinished = true; playBtn.innerHTML = EVO_ICON.stop; return; }
+          slider.value = d + 1; evoFrame(d + 1);
+        }, 850);
+      };
+    }
+
+    function initEvolucao() {
+      refreshEvoData(); // sempre recalcula com os resultados atuais
+      if (!evoInited) { buildEvoLanes(); wireEvoPlay(); evoInited = true; }
+      const slider = document.getElementById("evoSlider");
+      const playBtn = document.getElementById("evoPlayBtn");
+      if (evoTimer) { clearInterval(evoTimer); evoTimer = null; }
+      evoFinished = false;
+      slider.max = evoLabels.length - 1;
+      slider.value = 0;
+      playBtn.innerHTML = EVO_ICON.play;
+      evoFrame(0);
+    }
+
+    function openEvolucao() { initEvolucao(); evolucaoOverlay.hidden = false; }
+    function closeEvolucao() { evolucaoOverlay.hidden = true; }
+    if (rankingTitle) {
+      rankingTitle.addEventListener("click", openEvolucao);
+    }
+    evolucaoOverlay.addEventListener("click", e => {
+      if (e.target === evolucaoOverlay) closeEvolucao();
     });
 
     // ---- Resultados (detalhamento de pontos por jogador) ----
