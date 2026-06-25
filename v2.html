@@ -398,13 +398,19 @@
     }
 
     /* Tabela de Resultados (detalhamento por jogador) */
+    #resultsOverlay {
+      padding: 10px;
+    }
+
     .results-modal {
       max-width: 460px;
+      padding-left: 10px;
+      padding-right: 10px;
     }
 
     .results-table {
       table-layout: fixed;
-      width: auto;
+      width: 100%;
       margin-left: auto;
       margin-right: auto;
     }
@@ -451,7 +457,7 @@
     }
 
     .results-table .res-name {
-      width: 85px;
+      width: auto;
       text-align: left;
       font-weight: 600;
       padding: 0 0 0 10px;
@@ -467,7 +473,7 @@
     .results-table .res-c0,
     .results-table .res-neg,
     .results-table .res-total {
-      width: 56px;
+      width: 46px;
       text-align: center;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
@@ -497,7 +503,7 @@
     .results-legend {
       margin: 10px 4px 2px;
       text-align: center;
-      font-size: 0.55rem;
+      font-size: 0.72rem;
       white-space: nowrap;
       color: #475569;
       line-height: 1.5;
@@ -2531,7 +2537,22 @@
         resultsModal.style.maxHeight = (window.innerHeight * 0.96) + "px";
         resultsModal.style.transformOrigin = "center center";
         resultsModal.style.transform = "none";
+        fitResultsLegend();
       });
+    }
+
+    // Reduz a fonte da legenda apenas o necessário para caber em uma única linha,
+    // qualquer que seja a largura da tela (ex.: iPhone).
+    function fitResultsLegend() {
+      const leg = resultsModal.querySelector(".results-legend");
+      if (!leg) return;
+      leg.style.fontSize = "";
+      const base = parseFloat(getComputedStyle(leg).fontSize);
+      const avail = leg.clientWidth;
+      const need = leg.scrollWidth;
+      if (need > avail && avail > 0) {
+        leg.style.fontSize = Math.max(6, base * avail / need) + "px";
+      }
     }
 
     function closeResults() {
