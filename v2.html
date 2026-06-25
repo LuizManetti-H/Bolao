@@ -419,6 +419,8 @@
     .results-table thead th {
       color: #fff;
       white-space: nowrap;
+      height: 21px;
+      line-height: 21px;
     }
 
     .results-table thead th[data-sort] {
@@ -498,8 +500,18 @@
     .results-table tbody tr td { background: #ffffff; }
     .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
 
-    .results-table tbody tr td { background: #ffffff; }
-    .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
+    .results-table tbody td {
+      height: 19px;
+      line-height: 19px;
+    }
+
+    .results-table tbody tr {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .results-table tbody tr.hl td { background: #dcfce7 !important; }
 
     .results-legend {
       margin: 10px 4px 2px;
@@ -2548,11 +2560,19 @@
       const leg = resultsModal.querySelector(".results-legend");
       if (!leg) return;
       leg.style.fontSize = "";
-      const base = parseFloat(getComputedStyle(leg).fontSize);
       const avail = leg.clientWidth;
-      const need = leg.scrollWidth;
-      if (need > avail && avail > 0) {
-        leg.style.fontSize = Math.max(6, base * avail / need) + "px";
+      if (avail <= 0) return;
+      let size = parseFloat(getComputedStyle(leg).fontSize);
+      // Estimativa inicial proporcional
+      if (leg.scrollWidth > avail) {
+        size = Math.max(6, size * avail / leg.scrollWidth);
+        leg.style.fontSize = size + "px";
+      }
+      // Ajuste fino: garante o encaixe mesmo com as métricas de fonte do Safari/iOS
+      let guard = 60;
+      while (leg.scrollWidth > leg.clientWidth && size > 6 && guard-- > 0) {
+        size = Math.max(6, size - 0.5);
+        leg.style.fontSize = size + "px";
       }
     }
 
@@ -2577,6 +2597,15 @@
         resultsSortDir = key === "name" ? "asc" : "desc";
       }
       renderResultsRows();
+    });
+
+    // Clique numa linha destaca-a inteira em verde (alterna), como no Placar Geral
+    resultsBody.addEventListener("click", e => {
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+      const wasSel = tr.classList.contains("hl");
+      resultsBody.querySelectorAll("tr.hl").forEach(r => r.classList.remove("hl"));
+      if (!wasSel) tr.classList.add("hl");
     });
 
     // Clique no cabeçalho "Placar Geral" abre o ranking
