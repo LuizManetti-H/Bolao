@@ -398,13 +398,20 @@
     }
 
     /* Tabela de Resultados (detalhamento por jogador) */
+    #resultsOverlay {
+      padding: 10px;
+    }
+
     .results-modal {
       max-width: 460px;
+      padding-left: 10px;
+      padding-right: 10px;
+      padding-bottom: 8px;
     }
 
     .results-table {
       table-layout: fixed;
-      width: auto;
+      width: 100%;
       margin-left: auto;
       margin-right: auto;
     }
@@ -412,6 +419,8 @@
     .results-table thead th {
       color: #fff;
       white-space: nowrap;
+      height: 21px;
+      line-height: 21px;
     }
 
     .results-table thead th[data-sort] {
@@ -451,7 +460,7 @@
     }
 
     .results-table .res-name {
-      width: 120px;
+      width: auto;
       text-align: left;
       font-weight: 600;
       padding: 0 0 0 10px;
@@ -461,17 +470,19 @@
       color: var(--text);
     }
 
+    .results-table .res-pen,
     .results-table .res-c3,
     .results-table .res-c1,
     .results-table .res-c0,
     .results-table .res-neg,
     .results-table .res-total {
-      width: 56px;
+      width: 49px;
       text-align: center;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
     }
 
+    .results-table tbody .res-pen,
     .results-table tbody .res-c3,
     .results-table tbody .res-c1,
     .results-table tbody .res-c0,
@@ -480,6 +491,7 @@
       color: #000000;
     }
 
+    .results-table tbody .res-pen { color: #2563eb; }
     .results-table tbody .res-c3 { color: #15803d; }
     .results-table tbody .res-c1 { color: #ca8a04; }
     .results-table tbody .res-neg { color: #b91c1c; }
@@ -488,8 +500,27 @@
     .results-table tbody tr td { background: #ffffff; }
     .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
 
-    .results-table tbody tr td { background: #ffffff; }
-    .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
+    .results-table tbody td {
+      height: 19px;
+      line-height: 19px;
+    }
+
+    .results-table tbody tr {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .results-table tbody tr.hl td { background: #dcfce7 !important; }
+
+    .results-legend {
+      margin: 10px 4px 2px;
+      text-align: center;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      color: #475569;
+      line-height: 1.5;
+    }
 
     header h1 {
       margin: 0;
@@ -1716,14 +1747,16 @@
         <thead>
           <tr>
             <th class="res-name" data-sort="name">Jogador</th>
-            <th class="res-c3" data-sort="c3">+3</th>
-            <th class="res-c1" data-sort="c1">+1</th>
-            <th class="res-c0" data-sort="c0">0</th>
-            <th class="res-neg" data-sort="cNeg">−2</th>
+            <th class="res-pen" data-sort="pen">PEN</th>
+            <th class="res-c3" data-sort="c3">PLC</th>
+            <th class="res-c1" data-sort="c1">VEN</th>
+            <th class="res-c0" data-sort="c0">NÃO</th>
+            <th class="res-neg" data-sort="cNeg">INV</th>
           </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
+      <p class="results-legend">PEN = Pênaltis&nbsp;&nbsp;|&nbsp;&nbsp;PLC = Placar&nbsp;&nbsp;|&nbsp;&nbsp;VEN = Vencedor&nbsp;&nbsp;|&nbsp;&nbsp;NÃO = Não pontuou&nbsp;&nbsp;|&nbsp;&nbsp;INV = Placar invertido</p>
     </div>
   </div>
 
@@ -2476,7 +2509,7 @@
 
     function renderResultsRows() {
       const rows = participants
-        .map((name, i) => ({ name, ...computeParticipantBreakdown(i) }));
+        .map((name, i) => ({ name, pen: 0, ...computeParticipantBreakdown(i) }));
 
       const key = resultsSortKey;
       const dir = resultsSortDir === "asc" ? 1 : -1;
@@ -2492,6 +2525,7 @@
       resultsBody.innerHTML = rows.map((r) => `
           <tr>
             <td class="res-name">${r.name}</td>
+            <td class="res-pen">0</td>
             <td class="res-c3">${r.c3}</td>
             <td class="res-c1">${r.c1}</td>
             <td class="res-c0">${r.c0}</td>
@@ -2516,7 +2550,30 @@
         resultsModal.style.maxHeight = (window.innerHeight * 0.96) + "px";
         resultsModal.style.transformOrigin = "center center";
         resultsModal.style.transform = "none";
+        fitResultsLegend();
       });
+    }
+
+    // Reduz a fonte da legenda apenas o necessário para caber em uma única linha,
+    // qualquer que seja a largura da tela (ex.: iPhone).
+    function fitResultsLegend() {
+      const leg = resultsModal.querySelector(".results-legend");
+      if (!leg) return;
+      leg.style.fontSize = "";
+      const avail = leg.clientWidth;
+      if (avail <= 0) return;
+      let size = parseFloat(getComputedStyle(leg).fontSize);
+      // Estimativa inicial proporcional
+      if (leg.scrollWidth > avail) {
+        size = Math.max(6, size * avail / leg.scrollWidth);
+        leg.style.fontSize = size + "px";
+      }
+      // Ajuste fino: garante o encaixe mesmo com as métricas de fonte do Safari/iOS
+      let guard = 60;
+      while (leg.scrollWidth > leg.clientWidth && size > 6 && guard-- > 0) {
+        size = Math.max(6, size - 0.5);
+        leg.style.fontSize = size + "px";
+      }
     }
 
     function closeResults() {
@@ -2540,6 +2597,15 @@
         resultsSortDir = key === "name" ? "asc" : "desc";
       }
       renderResultsRows();
+    });
+
+    // Clique numa linha destaca-a inteira em verde (alterna), como no Placar Geral
+    resultsBody.addEventListener("click", e => {
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+      const wasSel = tr.classList.contains("hl");
+      resultsBody.querySelectorAll("tr.hl").forEach(r => r.classList.remove("hl"));
+      if (!wasSel) tr.classList.add("hl");
     });
 
     // Clique no cabeçalho "Placar Geral" abre o ranking
