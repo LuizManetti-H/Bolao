@@ -162,9 +162,7 @@
     "Grupo F": "HOL",
     "Grupo F#2": "JAP",
     "Grupo D#2": "AUS",
-    "3º Colocados": "BOS",
-    "Grupo I": "FRA",
-    "Grupo I#2": "NOR"
+    "3º Colocados": "BOS"
   },
   "2026-06-19|Estados Unidos|Austrália": {
     "h": "2",
@@ -333,7 +331,6 @@
   },
   "2026-06-26|Senegal|Iraque": {
     "h": "1",
-    "a": "0",
-    "status": "live"
+    "a": "0"
   }
 }
