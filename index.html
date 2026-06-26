@@ -4011,6 +4011,23 @@
       const s = pageScale || 1;
       classStickyHead.style.left = rect.left + "px";
       classStickyHead.style.width = (rect.width / s) + "px";
+
+      // Copia a largura real de cada coluna para o clone. Sem isso, o cabeçalho
+      // fixo (que só tem o thead) encolhe para a largura mínima e desalinha das
+      // colunas do corpo da tabela.
+      const syncCols = (realTable, cloneTable) => {
+        if (!realTable || !cloneTable) return;
+        const rTh = realTable.querySelectorAll("thead th");
+        const cTh = cloneTable.querySelectorAll("thead th");
+        cloneTable.style.tableLayout = "fixed";
+        cloneTable.style.width = realTable.offsetWidth + "px";
+        cTh.forEach((th, i) => { if (rTh[i]) th.style.width = rTh[i].offsetWidth + "px"; });
+      };
+      syncCols(realScroll && realScroll.querySelector(".fin-table"),
+               classStickyScroll && classStickyScroll.querySelector(".fin-table"));
+      syncCols(view.querySelector(".name-table"),
+               classStickyHead.querySelector(".name-table"));
+
       if (realScroll && classStickyScroll) {
         classStickyScroll.scrollLeft = realScroll.scrollLeft;
       }
