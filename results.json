@@ -364,10 +364,12 @@
   },
   "2026-06-27|Croácia|Gana": {
     "h": "0",
-    "a": "0"
+    "a": "0",
+    "status": "live"
   },
   "2026-06-27|Panamá|Inglaterra": {
     "h": "0",
-    "a": ""
+    "a": "0",
+    "status": "live"
   }
 }
