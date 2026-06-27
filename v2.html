@@ -307,7 +307,7 @@
     .evo-lscore { flex: 0 0 28px; text-align: right; padding-right: 8px; font-size: .7rem; font-weight: 800; color: #334155; font-variant-numeric: tabular-nums; }
     .evo-run { position: relative; flex: 1; height: 100%; border-left: 2px solid #e2e8f0; }
     .evo-finish { position: absolute; z-index: 0; top: 0; bottom: 0; right: 0; width: 3px; background: repeating-linear-gradient(45deg,#0f172a 0 5px,#fff 5px 10px); border-radius: 2px; }
-    .evo-runner { position: absolute; left: 0; top: 50%; transform: translateY(-50%); transition: left .7s cubic-bezier(.4,0,.2,1); }
+    .evo-runner { position: absolute; left: 0; top: 50%; transform: translateY(-50%); transition: left .7s linear; }
     .evo-horse { position: relative; width: 42px; height: 28px; }
     .evo-horse-fill {
       position: absolute; inset: 0; background: #fff;
@@ -497,7 +497,7 @@
     .results-table tbody .res-neg { color: #b91c1c; }
     .results-table .res-total { font-weight: 800; }
 
-    .results-table tbody tr td { background: #ffffff; }
+    .results-table tbody tr:nth-child(odd) td { background: #ffffff; }
     .results-table tbody tr:nth-child(even) td { background: #f1f5f9; }
 
     .results-table tbody td {
@@ -1277,6 +1277,17 @@
     .admin-mode .games-table.wide-cols .match-teams .team-x:hover {
       background: #fff;
       color: var(--accent);
+    }
+
+    /* Mata-mata (Oitavas+): nome do time clicável no modo Admin para escolher
+       o classificado da fase anterior. */
+    .admin-mode .match-teams .team-pick {
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .admin-mode .match-teams .team-pick:hover {
+      background: var(--accent-soft);
     }
 
     thead th.name-col {
@@ -2207,6 +2218,80 @@
       return false;
     }
 
+    // ---- Persistência dos times do mata-mata (reescreve o data.js no GitHub) ----
+    // Reconstrói o conteúdo do data.js a partir do array de jogos em memória,
+    // descartando os campos calculados (_lt etc.) e mantendo a ordem das chaves.
+    function serializeBolaoData() {
+      const cleanGames = games.map(g => ({ d: g.d, t: g.t, h: g.h, a: g.a, g: g.g, p: g.p }));
+      return "window.BOLAO_DATA = " + JSON.stringify({ participants, games: cleanGames }) + ";";
+    }
+    let dataSha = null;
+    let dataPushing = false;
+    let dataPushQueued = false;
+    async function getDataSha() {
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/data.js?ref=${GH.branch}&t=${Date.now()}`;
+      const res = await fetch(apiUrl, { headers: ghHeaders(), cache: "no-store" });
+      if (res.ok) { return (await res.json()).sha; }
+      return null;
+    }
+    async function doPushData(allowRetry) {
+      if (dataSha === null) { dataSha = await getDataSha(); }
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/data.js`;
+      const body = {
+        message: "Atualiza times do mata-mata",
+        content: toBase64Utf8(serializeBolaoData()),
+        branch: GH.branch
+      };
+      if (dataSha) body.sha = dataSha;
+      const res = await fetch(apiUrl, {
+        method: "PUT",
+        headers: { ...ghHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        dataSha = data && data.content ? data.content.sha : null;
+        return true;
+      }
+      if ((res.status === 409 || res.status === 422) && allowRetry) {
+        dataSha = await getDataSha();
+        return doPushData(false);
+      }
+      let detail = "";
+      try { detail = (await res.json()).message || ""; } catch {}
+      console.error("Falha ao salvar data.js no GitHub:", res.status, detail);
+      if (res.status === 401 || res.status === 403) {
+        clearToken();
+        dataSha = null;
+        window.alert(
+          `GitHub recusou o token (HTTP ${res.status}).\n` +
+          `Mensagem: ${detail}\n\n` +
+          `Verifique se o token é fine-grained, com permissão "Contents: Read and write" ` +
+          `no repositório ${GH.owner}/${GH.repo}.`
+        );
+      } else {
+        window.alert(`Erro ao salvar os times (HTTP ${res.status}).\nMensagem: ${detail}`);
+      }
+      return false;
+    }
+    async function pushDataJs() {
+      if (!getToken() && !ensureToken()) { setSaveStatus("error"); return; }
+      if (dataPushing) { dataPushQueued = true; return; }
+      dataPushing = true;
+      setSaveStatus("saving");
+      try {
+        const ok = await doPushData(true);
+        setSaveStatus(ok ? "saved" : "error");
+      } catch (e) {
+        console.error(e);
+        setSaveStatus("error");
+        window.alert("Erro de rede ao salvar os times: " + e.message);
+      } finally {
+        dataPushing = false;
+        if (dataPushQueued) { dataPushQueued = false; pushDataJs(); }
+      }
+    }
+
     let savedHideTimer = null;
     function setSaveStatus(state) {
       const els = document.querySelectorAll(".save-status");
@@ -2310,8 +2395,12 @@
     const rankingModal = document.getElementById("rankingModal");
 
     function openRanking() {
+      // O Placar Geral mostra sempre o placar do dia real (data atual do sistema),
+      // independente da data selecionada no seletor de Jogos.
+      const now = new Date();
+      const realToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const rows = participants
-        .map((name, i) => ({ name, pts: computeParticipantGrandTotal(i, dateInput.value) }))
+        .map((name, i) => ({ name, pts: computeParticipantGrandTotal(i, realToday) }))
         .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, "pt-BR"));
 
       let lastPts = null;
@@ -2380,29 +2469,112 @@
     // Recalcula os placares por data a partir dos resultados atuais. Usa a mesma
     // regra do placar diário do modo Jogos: Placar Geral acumulado até cada data
     // (computeParticipantGrandTotal). As datas vêm da linha do tempo real dos jogos.
-    function refreshEvoData() {
-      // Considera apenas dias que têm jogos (dias sem jogos são ignorados).
-      // Percorre os dias de jogo em ordem e para no primeiro dia cujo próximo
-      // jogo válido ainda está sem resultado — esse é o último dia da linha do tempo.
-      const dateHasResult = d => games.some(g => {
-        if (g.d !== d) return false;
+    // Gatilhos cronológicos: ao alcançar um timeslot (data+hora), além dos jogos
+    // daquele horário, contabiliza também os pontos do(s) grupo(s) de Classificados
+    // e/ou das colunas de Finalistas indicados — "ao mesmo tempo".
+    const EVO_CLASS_TRIGGERS = {
+      "2026-06-24T15:00": ["Grupo B"],
+      "2026-06-24T18:00": ["Grupo C"],
+      "2026-06-24T21:00": ["Grupo A"],
+      "2026-06-25T16:00": ["Grupo E"],
+      "2026-06-25T19:00": ["Grupo F"],
+      "2026-06-25T22:00": ["Grupo D"],
+      "2026-06-26T15:00": ["Grupo I"],
+      "2026-06-26T20:00": ["Grupo H"],
+      "2026-06-26T23:00": ["Grupo G"],
+      "2026-06-27T17:00": ["Grupo L"],
+      "2026-06-27T19:30": ["Grupo K"],
+      // Último timeslot de grupos: fecha o Grupo J e libera os 3º Colocados.
+      "2026-06-27T22:00": ["Grupo J", "3º Colocados"]
+    };
+    const EVO_FINAL_TRIGGERS = {
+      "2026-07-18T17:00": ["3º Lugar", "4º Lugar"],
+      "2026-07-19T15:00": ["Campeão", "Vice-campeão"]
+    };
+
+    function evoSlotKey(d, t) {
+      const [h = "00", m = "00"] = String(t || "00:00").split(":");
+      return d + "T" + h.padStart(2, "0") + ":" + m.padStart(2, "0");
+    }
+    function evoResulted(r) {
+      return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+    }
+    // Soma o score dos jogos até (e incluindo) o timeslot informado, em ordem
+    // cronológica (data+hora). Comparação lexicográfica funciona pelo formato fixo.
+    function evoJogosUpToSlot(pIndex, slotK) {
+      let total = 0;
+      games.forEach(g => {
+        if (evoSlotKey(g.d, g.t) > slotK) return;
         const r = resultsData[gameKey(g)];
-        return r && r.h !== "" && r.h != null && r.a !== "" && r.a != null;
+        if (!evoResulted(r)) return;
+        const result = [parseInt(r.h, 10), parseInt(r.a, 10)];
+        if (Number.isNaN(result[0]) || Number.isNaN(result[1])) return;
+        const sc = scoreGameResult(g.p[pIndex], result, penFromResult(r), g.d);
+        if (sc) total += sc.points;
       });
-      const allDates = [...new Set(games.map(g => g.d))].sort();
-      const isoDates = [];
-      for (const d of allDates) {
-        if (!dateHasResult(d)) break; // próximo jogo válido sem resultado → encerra
-        isoDates.push(d);
+      return total;
+    }
+    // Pontos de Finalistas considerando apenas as colunas já liberadas por gatilho.
+    function evoFinalistaPartial(pIndex, actual, cols) {
+      let total = 0;
+      cols.forEach(col => {
+        const real = (actual[col] || "").trim().toLowerCase();
+        if (!real) return;
+        const pick = ((finalistsData[col] && finalistsData[col][pIndex]) || "").trim().toLowerCase();
+        if (pick && pick === real) total += FIN_POINTS[col] || 0;
+      });
+      return total;
+    }
+
+    function refreshEvoData() {
+      // Linha do tempo cronológica por timeslot (data + hora). Um timeslot só
+      // entra quando TODOS os seus jogos têm resultado; para no primeiro incompleto.
+      const slotMap = new Map();
+      games.forEach(g => slotMap.set(evoSlotKey(g.d, g.t), { d: g.d, t: g.t }));
+      const allSlots = [...slotMap.values()]
+        .sort((a, b) => evoSlotKey(a.d, a.t).localeCompare(evoSlotKey(b.d, b.t)));
+      const slotComplete = slot => games
+        .filter(g => g.d === slot.d && g.t === slot.t)
+        .every(g => evoResulted(resultsData[gameKey(g)]));
+      const slots = [];
+      for (const slot of allSlots) {
+        if (!slotComplete(slot)) break;
+        slots.push(slot);
       }
-      evoLabels = ["Início", ...isoDates.map(evoIsoToBR)];
+
+      // Estado acumulado de gatilhos por índice de timeslot.
+      const slotAllowedGroups = [];
+      const slotFinalCols = [];
+      const ag = new Set();
+      const fc = [];
+      slots.forEach(slot => {
+        const k = evoSlotKey(slot.d, slot.t);
+        (EVO_CLASS_TRIGGERS[k] || []).forEach(c => ag.add(c));
+        (EVO_FINAL_TRIGGERS[k] || []).forEach(c => { if (!fc.includes(c)) fc.push(c); });
+        slotAllowedGroups.push(new Set(ag));
+        slotFinalCols.push(fc.slice());
+      });
+
+      const classActual = getClassActualTeams();
+      const finalActual = getFinalActualTeams();
+
+      evoLabels = ["Início", ...slots.map(s => evoIsoToBR(s.d))];
       evoSeries = participants.map((name, idx) => {
         const p = [0];
-        isoDates.forEach(d => p.push(computeParticipantGrandTotal(idx, d)));
+        slots.forEach((slot, si) => {
+          const k = evoSlotKey(slot.d, slot.t);
+          const jogos = evoJogosUpToSlot(idx, k);
+          const groups = slotAllowedGroups[si];
+          const classPts = groups.size
+            ? computeClassificadosTotal(idx, classActual, groups) : 0;
+          const finPts = evoFinalistaPartial(idx, finalActual, slotFinalCols[si]);
+          p.push(jogos + classPts + finPts);
+        });
         return { name, idx, p };
       });
       evoGMAX = Math.max(1, ...evoSeries.map(s => Math.max(...s.p)));
     }
+
 
     function evoFrame(day) {
       const distinct = [...new Set(evoSeries.map(s => s.p[day]))].sort((a, b) => b - a);
@@ -2468,11 +2640,14 @@
         if (evoTimer) { clear(); playBtn.innerHTML = EVO_ICON.play; return; } // pausa
         playBtn.innerHTML = EVO_ICON.pause;
         if (+slider.value >= D - 1) { slider.value = 0; evoFrame(0); }
+        const stepMs = Math.max(1, 10000 / Math.max(1, D - 1)); // animação total sempre ~10s
+        const moveMs = stepMs; // transição dura o passo inteiro → movimento contínuo, sem parar
+        Object.values(evoLanes).forEach(L => { L.runner.style.transitionTimingFunction = "linear"; L.runner.style.transitionDuration = moveMs + "ms"; });
         evoTimer = setInterval(() => {
           let d = +slider.value;
           if (d >= D - 1) { clear(); evoFinished = true; playBtn.innerHTML = EVO_ICON.stop; return; }
           slider.value = d + 1; evoFrame(d + 1);
-        }, 850);
+        }, stepMs);
       };
     }
 
@@ -2506,6 +2681,7 @@
     // Estado de ordenação da tabela de Resultados
     let resultsSortKey = "name";
     let resultsSortDir = "asc";
+    let resultsHlName = null;
 
     function renderResultsRows() {
       const rows = participants
@@ -2523,7 +2699,7 @@
       });
 
       resultsBody.innerHTML = rows.map((r) => `
-          <tr>
+          <tr data-name="${r.name}"${r.name === resultsHlName ? ' class="hl"' : ''}>
             <td class="res-name">${r.name}</td>
             <td class="res-pen">0</td>
             <td class="res-c3">${r.c3}</td>
@@ -2606,6 +2782,7 @@
       const wasSel = tr.classList.contains("hl");
       resultsBody.querySelectorAll("tr.hl").forEach(r => r.classList.remove("hl"));
       if (!wasSel) tr.classList.add("hl");
+      resultsHlName = wasSel ? null : tr.dataset.name;
     });
 
     // Clique no cabeçalho "Placar Geral" abre o ranking
@@ -3923,6 +4100,23 @@
       const s = pageScale || 1;
       classStickyHead.style.left = rect.left + "px";
       classStickyHead.style.width = (rect.width / s) + "px";
+
+      // Copia a largura real de cada coluna para o clone. Sem isso, o cabeçalho
+      // fixo (que só tem o thead) encolhe para a largura mínima e desalinha das
+      // colunas do corpo da tabela.
+      const syncCols = (realTable, cloneTable) => {
+        if (!realTable || !cloneTable) return;
+        const rTh = realTable.querySelectorAll("thead th");
+        const cTh = cloneTable.querySelectorAll("thead th");
+        cloneTable.style.tableLayout = "fixed";
+        cloneTable.style.width = realTable.offsetWidth + "px";
+        cTh.forEach((th, i) => { if (rTh[i]) th.style.width = rTh[i].offsetWidth + "px"; });
+      };
+      syncCols(realScroll && realScroll.querySelector(".fin-table"),
+               classStickyScroll && classStickyScroll.querySelector(".fin-table"));
+      syncCols(view.querySelector(".name-table"),
+               classStickyHead.querySelector(".name-table"));
+
       if (realScroll && classStickyScroll) {
         classStickyScroll.scrollLeft = realScroll.scrollLeft;
       }
@@ -3985,6 +4179,103 @@
       });
     })();
 
+    // ===================================================================
+    // Mata-mata: escolha do time de cada confronto pelo Admin (Oitavas+).
+    // A escolha altera o nome do time no próprio array de jogos e é gravada
+    // reescrevendo o data.js no GitHub (fonte única dos confrontos).
+    // ===================================================================
+    // Fase anterior de cada fase do mata-mata (para listar os classificados).
+    const KO_PREV_PHASE = {
+      "Oitavas de final": "Segunda Fase",
+      "Quartas de final": "Oitavas de final",
+      "Semifinal": "Quartas de final",
+      "Final": "Semifinal",
+      "Disputa de 3º lugar": "Semifinal",
+    };
+    // Vencedor/perdedor de um jogo com placar preenchido (usa pênaltis no empate).
+    function gameDecision(g) {
+      const r = resultsData[gameKey(g)];
+      if (!r) return null;
+      const h = parseInt(r.h, 10), a = parseInt(r.a, 10);
+      if (Number.isNaN(h) || Number.isNaN(a)) return null;
+      if (h !== a) return h > a ? { win: g.h, lose: g.a } : { win: g.a, lose: g.h };
+      const ph = parseInt(r.ph, 10), pa = parseInt(r.pa, 10);
+      if (Number.isNaN(ph) || Number.isNaN(pa) || ph === pa) return null;
+      return ph > pa ? { win: g.h, lose: g.a } : { win: g.a, lose: g.h };
+    }
+    // Times que avançaram (kind="win") ou foram eliminados (kind="lose") numa fase.
+    function teamsFromPhase(phaseName, kind) {
+      const out = [];
+      games.filter(g => g.g === phaseName).forEach(g => {
+        const d = gameDecision(g);
+        if (!d) return;
+        const name = kind === "lose" ? d.lose : d.win;
+        if (TEAM_INFO[name] && !out.includes(name)) out.push(name);
+      });
+      return out;
+    }
+    // Monta a lista de seleção de time para um confronto do mata-mata.
+    function buildKnockoutPicker(anchorEl, g, side, teamNames) {
+      closeGroupPicker();
+      if (!teamNames || !teamNames.length) return;
+      const menu = document.createElement("div");
+      menu.className = "group-picker";
+      teamNames.forEach(name => {
+        const info = TEAM_INFO[name];
+        const sig = info ? info[0] : name;
+        const opt = document.createElement("button");
+        opt.type = "button";
+        opt.className = "group-picker-opt";
+        opt.innerHTML =
+          (info ? `<img class="group-picker-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="">` : "") +
+          `<span class="group-picker-sig">${sig}</span><span class="group-picker-name">${name}</span>`;
+        opt.addEventListener("click", () => {
+          if (side === "h") g.h = name; else g.a = name;
+          closeGroupPicker();
+          render();
+          updateTotals();
+          pushDataJs();
+        });
+        menu.appendChild(opt);
+      });
+      document.body.appendChild(menu);
+      const r = anchorEl.getBoundingClientRect();
+      menu.style.top = (r.bottom + 4) + "px";
+      menu.style.left = r.left + "px";
+      menu.style.minWidth = r.width + "px";
+      const mr = menu.getBoundingClientRect();
+      if (mr.right > window.innerWidth - 8) {
+        menu.style.left = Math.max(8, window.innerWidth - 8 - mr.width) + "px";
+      }
+      if (mr.bottom > window.innerHeight - 8) {
+        menu.style.top = Math.max(8, r.top - 4 - mr.height) + "px";
+      }
+      groupPickerMenu = menu;
+      setTimeout(() => document.addEventListener("mousedown", onGroupPickerOutside, true), 0);
+    }
+    function openKnockoutPicker(teamEl) {
+      const gIndex = parseInt(teamEl.dataset.game, 10);
+      const side = teamEl.dataset.side;
+      const dayGames = games.filter(g => g.d === dateInput.value);
+      const g = dayGames[gIndex];
+      if (!g) return;
+      const prev = KO_PREV_PHASE[g.g];
+      if (!prev) return;
+      // A disputa de 3º lugar lista os perdedores das semifinais; as demais
+      // fases listam os vencedores da fase anterior.
+      const kind = g.g === "Disputa de 3º lugar" ? "lose" : "win";
+      const teams = teamsFromPhase(prev, kind).sort((a, b) => a.localeCompare(b, "pt-BR"));
+      buildKnockoutPicker(teamEl, g, side, teams);
+    }
+    // No modo Admin, clicar no nome de um time do mata-mata abre a lista.
+    document.addEventListener("click", e => {
+      if (!adminMode) return;
+      const teamEl = e.target.closest(".team-pick");
+      if (!teamEl) return;
+      e.preventDefault();
+      openKnockoutPicker(teamEl);
+    });
+
     function render() {
       const selected = dateInput.value;
       dateButton.textContent = formatDate(selected);
@@ -4006,18 +4297,23 @@
 
       // A partir da Segunda Fase (28.Jun) os confrontos usam bandeira + sigla
       const isKnockout = selected >= "2026-06-28";
+      // A partir das Oitavas de Final (04.Jul) o Admin escolhe os times de cada
+      // confronto clicando no nome (lista com os classificados da fase anterior).
+      const isPickable = selected >= "2026-07-04";
       // Renderiza um time: mandante = bandeira + sigla; visitante = sigla + bandeira.
       // Se o time não estiver no mapa (ex.: placeholders "2A", "W73"), usa o texto.
-      function renderTeam(name, side) {
+      function renderTeam(name, side, gIndex) {
+        const pickCls = isPickable ? " team-pick" : "";
+        const pickAttrs = isPickable ? ` data-game="${gIndex}" data-side="${side}"` : "";
         const info = isKnockout ? TEAM_INFO[name] : null;
         if (!info) {
           // No mata-mata, placeholders (ex.: "1C", "W73") usam a mesma formatação das siglas
-          if (isKnockout) return `<span class="team"><span class="team-sigla">${name}</span></span>`;
+          if (isKnockout) return `<span class="team${pickCls}"${pickAttrs}><span class="team-sigla">${name}</span></span>`;
           return `<span class="${teamClass(name)}">${name}</span>`;
         }
         const img = `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${name}">`;
         const sig = `<span class="team-sigla">${info[0]}</span>`;
-        return `<span class="team">${side === "h" ? img + sig : sig + img}</span>`;
+        return `<span class="team${pickCls}"${pickAttrs}>${side === "h" ? img + sig : sig + img}</span>`;
       }
 
       // Cabeçalho: coluna de nomes + uma coluna por jogo
@@ -4026,9 +4322,9 @@
           <div class="match-header">
             <span class="match-time" data-game="${gIndex}" data-key="${gameKey(g)}">${g._lt}</span>
             <span class="match-teams">
-              ${renderTeam(g.h, "h")}
+              ${renderTeam(g.h, "h", gIndex)}
               <span class="team-x" data-game="${gIndex}" data-key="${gameKey(g)}">x</span>
-              ${renderTeam(g.a, "a")}
+              ${renderTeam(g.a, "a", gIndex)}
             </span>
             <span class="match-result${penaltyKeys.has(gameKey(g)) ? " show-penalties" : ""}" data-key="${gameKey(g)}">
               <span class="result-side">
@@ -4537,11 +4833,26 @@
       fetchResults().then(render);
     });
 
-    // Ao abrir, seleciona a data de hoje (limitada ao período do torneio)
+    // Ao abrir, seleciona a data de hoje em ET (America/New_York), com corte às 4h:
+    // entre 0h e 3h59 ET o site abre com a data do dia anterior.
     (function setInitialDate() {
       const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      let target = today;
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/New_York",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", hour12: false
+      }).formatToParts(now).reduce((o, p) => { o[p.type] = p.value; return o; }, {});
+      let h = parseInt(parts.hour, 10);
+      if (h === 24) h = 0; // alguns ambientes retornam "24" à meia-noite
+      let target;
+      if (h < 4) {
+        // dia anterior em ET
+        const dt = new Date(Date.UTC(+parts.year, +parts.month - 1, +parts.day));
+        dt.setUTCDate(dt.getUTCDate() - 1);
+        target = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+      } else {
+        target = `${parts.year}-${parts.month}-${parts.day}`;
+      }
       if (dateInput.min && target < dateInput.min) target = dateInput.min;
       if (dateInput.max && target > dateInput.max) target = dateInput.max;
       dateInput.value = target;
