@@ -338,10 +338,12 @@
   },
   "2026-06-26|Cabo Verde|Arábia Saudita": {
     "h": "0",
-    "a": "0"
+    "a": "0",
+    "status": "live"
   },
   "2026-06-26|Uruguai|Espanha": {
     "h": "0",
-    "a": "0"
+    "a": "0",
+    "status": "live"
   }
 }
