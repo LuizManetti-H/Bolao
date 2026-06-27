@@ -166,7 +166,7 @@
     "Grupo I": "FRA",
     "Grupo I#2": "NOR",
     "Grupo H": "ESP",
-    "Grupo H#2": "URU"
+    "Grupo H#2": "CBV"
   },
   "2026-06-19|Estados Unidos|Austrália": {
     "h": "2",
@@ -341,11 +341,11 @@
   "2026-06-26|Cabo Verde|Arábia Saudita": {
     "h": "0",
     "a": "0",
-    "status": "finished"
+    "status": "live"
   },
   "2026-06-26|Uruguai|Espanha": {
     "h": "0",
     "a": "1",
-    "status": "finished"
+    "status": "live"
   }
 }
