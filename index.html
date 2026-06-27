@@ -2310,8 +2310,12 @@
     const rankingModal = document.getElementById("rankingModal");
 
     function openRanking() {
+      // O Placar Geral mostra sempre o placar do dia real (data atual do sistema),
+      // independente da data selecionada no seletor de Jogos.
+      const now = new Date();
+      const realToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const rows = participants
-        .map((name, i) => ({ name, pts: computeParticipantGrandTotal(i, dateInput.value) }))
+        .map((name, i) => ({ name, pts: computeParticipantGrandTotal(i, realToday) }))
         .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, "pt-BR"));
 
       let lastPts = null;
@@ -4642,11 +4646,26 @@
       fetchResults().then(render);
     });
 
-    // Ao abrir, seleciona a data de hoje (limitada ao período do torneio)
+    // Ao abrir, seleciona a data de hoje em ET (America/New_York), com corte às 4h:
+    // entre 0h e 3h59 ET o site abre com a data do dia anterior.
     (function setInitialDate() {
       const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      let target = today;
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/New_York",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", hour12: false
+      }).formatToParts(now).reduce((o, p) => { o[p.type] = p.value; return o; }, {});
+      let h = parseInt(parts.hour, 10);
+      if (h === 24) h = 0; // alguns ambientes retornam "24" à meia-noite
+      let target;
+      if (h < 4) {
+        // dia anterior em ET
+        const dt = new Date(Date.UTC(+parts.year, +parts.month - 1, +parts.day));
+        dt.setUTCDate(dt.getUTCDate() - 1);
+        target = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+      } else {
+        target = `${parts.year}-${parts.month}-${parts.day}`;
+      }
       if (dateInput.min && target < dateInput.min) target = dateInput.min;
       if (dateInput.max && target > dateInput.max) target = dateInput.max;
       dateInput.value = target;
