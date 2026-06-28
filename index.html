@@ -1279,6 +1279,17 @@
       color: var(--accent);
     }
 
+    /* Mata-mata (Oitavas+): nome do time clicável no modo Admin para escolher
+       o classificado da fase anterior. */
+    .admin-mode .match-teams .team-pick {
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .admin-mode .match-teams .team-pick:hover {
+      background: var(--accent-soft);
+    }
+
     thead th.name-col {
       text-align: center;
       font-size: 0.75rem;
@@ -2205,6 +2216,80 @@
         `Confira se o repositório "${GH.repo}", o dono "${GH.owner}" e a branch "${GH.branch}" estão corretos.`
       );
       return false;
+    }
+
+    // ---- Persistência dos times do mata-mata (reescreve o data.js no GitHub) ----
+    // Reconstrói o conteúdo do data.js a partir do array de jogos em memória,
+    // descartando os campos calculados (_lt etc.) e mantendo a ordem das chaves.
+    function serializeBolaoData() {
+      const cleanGames = games.map(g => ({ d: g.d, t: g.t, h: g.h, a: g.a, g: g.g, p: g.p }));
+      return "window.BOLAO_DATA = " + JSON.stringify({ participants, games: cleanGames }) + ";";
+    }
+    let dataSha = null;
+    let dataPushing = false;
+    let dataPushQueued = false;
+    async function getDataSha() {
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/data.js?ref=${GH.branch}&t=${Date.now()}`;
+      const res = await fetch(apiUrl, { headers: ghHeaders(), cache: "no-store" });
+      if (res.ok) { return (await res.json()).sha; }
+      return null;
+    }
+    async function doPushData(allowRetry) {
+      if (dataSha === null) { dataSha = await getDataSha(); }
+      const apiUrl = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/data.js`;
+      const body = {
+        message: "Atualiza times do mata-mata",
+        content: toBase64Utf8(serializeBolaoData()),
+        branch: GH.branch
+      };
+      if (dataSha) body.sha = dataSha;
+      const res = await fetch(apiUrl, {
+        method: "PUT",
+        headers: { ...ghHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        dataSha = data && data.content ? data.content.sha : null;
+        return true;
+      }
+      if ((res.status === 409 || res.status === 422) && allowRetry) {
+        dataSha = await getDataSha();
+        return doPushData(false);
+      }
+      let detail = "";
+      try { detail = (await res.json()).message || ""; } catch {}
+      console.error("Falha ao salvar data.js no GitHub:", res.status, detail);
+      if (res.status === 401 || res.status === 403) {
+        clearToken();
+        dataSha = null;
+        window.alert(
+          `GitHub recusou o token (HTTP ${res.status}).\n` +
+          `Mensagem: ${detail}\n\n` +
+          `Verifique se o token é fine-grained, com permissão "Contents: Read and write" ` +
+          `no repositório ${GH.owner}/${GH.repo}.`
+        );
+      } else {
+        window.alert(`Erro ao salvar os times (HTTP ${res.status}).\nMensagem: ${detail}`);
+      }
+      return false;
+    }
+    async function pushDataJs() {
+      if (!getToken() && !ensureToken()) { setSaveStatus("error"); return; }
+      if (dataPushing) { dataPushQueued = true; return; }
+      dataPushing = true;
+      setSaveStatus("saving");
+      try {
+        const ok = await doPushData(true);
+        setSaveStatus(ok ? "saved" : "error");
+      } catch (e) {
+        console.error(e);
+        setSaveStatus("error");
+        window.alert("Erro de rede ao salvar os times: " + e.message);
+      } finally {
+        dataPushing = false;
+        if (dataPushQueued) { dataPushQueued = false; pushDataJs(); }
+      }
     }
 
     let savedHideTimer = null;
@@ -4094,6 +4179,103 @@
       });
     })();
 
+    // ===================================================================
+    // Mata-mata: escolha do time de cada confronto pelo Admin (Oitavas+).
+    // A escolha altera o nome do time no próprio array de jogos e é gravada
+    // reescrevendo o data.js no GitHub (fonte única dos confrontos).
+    // ===================================================================
+    // Fase anterior de cada fase do mata-mata (para listar os classificados).
+    const KO_PREV_PHASE = {
+      "Oitavas de final": "Segunda Fase",
+      "Quartas de final": "Oitavas de final",
+      "Semifinal": "Quartas de final",
+      "Final": "Semifinal",
+      "Disputa de 3º lugar": "Semifinal",
+    };
+    // Vencedor/perdedor de um jogo com placar preenchido (usa pênaltis no empate).
+    function gameDecision(g) {
+      const r = resultsData[gameKey(g)];
+      if (!r) return null;
+      const h = parseInt(r.h, 10), a = parseInt(r.a, 10);
+      if (Number.isNaN(h) || Number.isNaN(a)) return null;
+      if (h !== a) return h > a ? { win: g.h, lose: g.a } : { win: g.a, lose: g.h };
+      const ph = parseInt(r.ph, 10), pa = parseInt(r.pa, 10);
+      if (Number.isNaN(ph) || Number.isNaN(pa) || ph === pa) return null;
+      return ph > pa ? { win: g.h, lose: g.a } : { win: g.a, lose: g.h };
+    }
+    // Times que avançaram (kind="win") ou foram eliminados (kind="lose") numa fase.
+    function teamsFromPhase(phaseName, kind) {
+      const out = [];
+      games.filter(g => g.g === phaseName).forEach(g => {
+        const d = gameDecision(g);
+        if (!d) return;
+        const name = kind === "lose" ? d.lose : d.win;
+        if (TEAM_INFO[name] && !out.includes(name)) out.push(name);
+      });
+      return out;
+    }
+    // Monta a lista de seleção de time para um confronto do mata-mata.
+    function buildKnockoutPicker(anchorEl, g, side, teamNames) {
+      closeGroupPicker();
+      if (!teamNames || !teamNames.length) return;
+      const menu = document.createElement("div");
+      menu.className = "group-picker";
+      teamNames.forEach(name => {
+        const info = TEAM_INFO[name];
+        const sig = info ? info[0] : name;
+        const opt = document.createElement("button");
+        opt.type = "button";
+        opt.className = "group-picker-opt";
+        opt.innerHTML =
+          (info ? `<img class="group-picker-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="">` : "") +
+          `<span class="group-picker-sig">${sig}</span><span class="group-picker-name">${name}</span>`;
+        opt.addEventListener("click", () => {
+          if (side === "h") g.h = name; else g.a = name;
+          closeGroupPicker();
+          render();
+          updateTotals();
+          pushDataJs();
+        });
+        menu.appendChild(opt);
+      });
+      document.body.appendChild(menu);
+      const r = anchorEl.getBoundingClientRect();
+      menu.style.top = (r.bottom + 4) + "px";
+      menu.style.left = r.left + "px";
+      menu.style.minWidth = r.width + "px";
+      const mr = menu.getBoundingClientRect();
+      if (mr.right > window.innerWidth - 8) {
+        menu.style.left = Math.max(8, window.innerWidth - 8 - mr.width) + "px";
+      }
+      if (mr.bottom > window.innerHeight - 8) {
+        menu.style.top = Math.max(8, r.top - 4 - mr.height) + "px";
+      }
+      groupPickerMenu = menu;
+      setTimeout(() => document.addEventListener("mousedown", onGroupPickerOutside, true), 0);
+    }
+    function openKnockoutPicker(teamEl) {
+      const gIndex = parseInt(teamEl.dataset.game, 10);
+      const side = teamEl.dataset.side;
+      const dayGames = games.filter(g => g.d === dateInput.value);
+      const g = dayGames[gIndex];
+      if (!g) return;
+      const prev = KO_PREV_PHASE[g.g];
+      if (!prev) return;
+      // A disputa de 3º lugar lista os perdedores das semifinais; as demais
+      // fases listam os vencedores da fase anterior.
+      const kind = g.g === "Disputa de 3º lugar" ? "lose" : "win";
+      const teams = teamsFromPhase(prev, kind).sort((a, b) => a.localeCompare(b, "pt-BR"));
+      buildKnockoutPicker(teamEl, g, side, teams);
+    }
+    // No modo Admin, clicar no nome de um time do mata-mata abre a lista.
+    document.addEventListener("click", e => {
+      if (!adminMode) return;
+      const teamEl = e.target.closest(".team-pick");
+      if (!teamEl) return;
+      e.preventDefault();
+      openKnockoutPicker(teamEl);
+    });
+
     function render() {
       const selected = dateInput.value;
       dateButton.textContent = formatDate(selected);
@@ -4115,18 +4297,23 @@
 
       // A partir da Segunda Fase (28.Jun) os confrontos usam bandeira + sigla
       const isKnockout = selected >= "2026-06-28";
+      // A partir das Oitavas de Final (04.Jul) o Admin escolhe os times de cada
+      // confronto clicando no nome (lista com os classificados da fase anterior).
+      const isPickable = selected >= "2026-07-04";
       // Renderiza um time: mandante = bandeira + sigla; visitante = sigla + bandeira.
       // Se o time não estiver no mapa (ex.: placeholders "2A", "W73"), usa o texto.
-      function renderTeam(name, side) {
+      function renderTeam(name, side, gIndex) {
+        const pickCls = isPickable ? " team-pick" : "";
+        const pickAttrs = isPickable ? ` data-game="${gIndex}" data-side="${side}"` : "";
         const info = isKnockout ? TEAM_INFO[name] : null;
         if (!info) {
           // No mata-mata, placeholders (ex.: "1C", "W73") usam a mesma formatação das siglas
-          if (isKnockout) return `<span class="team"><span class="team-sigla">${name}</span></span>`;
+          if (isKnockout) return `<span class="team${pickCls}"${pickAttrs}><span class="team-sigla">${name}</span></span>`;
           return `<span class="${teamClass(name)}">${name}</span>`;
         }
         const img = `<img class="team-flag" src="${FLAGS_DIR}${encodeURIComponent(info[1])}" alt="${name}">`;
         const sig = `<span class="team-sigla">${info[0]}</span>`;
-        return `<span class="team">${side === "h" ? img + sig : sig + img}</span>`;
+        return `<span class="team${pickCls}"${pickAttrs}>${side === "h" ? img + sig : sig + img}</span>`;
       }
 
       // Cabeçalho: coluna de nomes + uma coluna por jogo
@@ -4135,9 +4322,9 @@
           <div class="match-header">
             <span class="match-time" data-game="${gIndex}" data-key="${gameKey(g)}">${g._lt}</span>
             <span class="match-teams">
-              ${renderTeam(g.h, "h")}
+              ${renderTeam(g.h, "h", gIndex)}
               <span class="team-x" data-game="${gIndex}" data-key="${gameKey(g)}">x</span>
-              ${renderTeam(g.a, "a")}
+              ${renderTeam(g.a, "a", gIndex)}
             </span>
             <span class="match-result${penaltyKeys.has(gameKey(g)) ? " show-penalties" : ""}" data-key="${gameKey(g)}">
               <span class="result-side">
