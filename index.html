@@ -2342,6 +2342,15 @@
       });
     }
 
+    // Retorna true se o jogo tem placar de pênaltis salvo (ph/pa preenchidos).
+    // Usado para exibir os pênaltis mesmo após sair do admin ou recarregar,
+    // independentemente do estado em memória de penaltyKeys.
+    function hasSavedPenalties(key) {
+      const r = resultsData[key];
+      return !!(r && r.ph !== undefined && r.ph !== null && r.ph !== ""
+        && r.pa !== undefined && r.pa !== null && r.pa !== "");
+    }
+
     adminButton.addEventListener("click", () => {
       if (adminMode) {
         setAdminMode(false);
@@ -4326,7 +4335,7 @@
               <span class="team-x" data-game="${gIndex}" data-key="${gameKey(g)}">x</span>
               ${renderTeam(g.a, "a", gIndex)}
             </span>
-            <span class="match-result${penaltyKeys.has(gameKey(g)) ? " show-penalties" : ""}" data-key="${gameKey(g)}">
+            <span class="match-result${(penaltyKeys.has(gameKey(g)) || hasSavedPenalties(gameKey(g))) ? " show-penalties" : ""}" data-key="${gameKey(g)}">
               <span class="result-side">
                 ${isKnockout ? `<input type="number" min="0" class="penalty-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Pênaltis ${g.h}" />` : ""}
                 <input type="number" min="0" class="result-box" data-game="${gIndex}" data-side="h" data-key="${gameKey(g)}" aria-label="Gols ${g.h}" />
@@ -4508,15 +4517,28 @@
         x.addEventListener("click", () => {
           if (!adminMode || !isKnockout) return;
           const k = x.dataset.key;
-          const currentlyShown = penaltyKeys.has(k);
+          const currentlyShown = penaltyKeys.has(k) || hasSavedPenalties(k);
           // Só permite habilitar os pênaltis quando o jogo está empatado.
           if (!currentlyShown && !isGameTied(k)) return;
-          if (currentlyShown) penaltyKeys.delete(k); else penaltyKeys.add(k);
+          if (currentlyShown) {
+            // Oculta e limpa os pênaltis (em memória e salvos) para não reaparecerem.
+            penaltyKeys.delete(k);
+            if (resultsData[k]) { resultsData[k].ph = ""; resultsData[k].pa = ""; }
+            pendingKeys.add(k);
+            [container, stickyHead].forEach(root => {
+              if (!root) return;
+              root.querySelectorAll(`.penalty-box[data-key="${k}"]`).forEach(inp => { inp.value = ""; });
+            });
+            schedulePush();
+          } else {
+            penaltyKeys.add(k);
+          }
           const show = penaltyKeys.has(k);
           [container, stickyHead].forEach(root => {
             if (!root) return;
             root.querySelectorAll(`.match-result[data-key="${k}"]`).forEach(r => r.classList.toggle("show-penalties", show));
           });
+          recomputeGame(x.dataset.game);
         });
       });
 
