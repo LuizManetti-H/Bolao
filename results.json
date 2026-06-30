@@ -425,5 +425,10 @@
     "status": "finished",
     "ph": "3",
     "pa": "4"
+  },
+  "2026-07-04|Canadá|W75": {
+    "h": "",
+    "a": "",
+    "status": "live"
   }
 }
